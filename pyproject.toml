@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "sparse-subsetter"
+version = "0.1.0"
+description = "Helper to sdownload and subset sparse data from Copernicus Marine Services"
+authors = ["renaudjester <renaud.jester@outlook.fr>", "Lobelia <developer@lobelia.earth>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+requests = "^2.32.3"
+pandas = "^2.2.3"
+
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
