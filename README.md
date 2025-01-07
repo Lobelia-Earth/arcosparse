@@ -1,6 +1,6 @@
 # Python sparse subsetter
 
-A subsetter for the MDS sparse data.
+A subsetter for the MDS sparse data. Based on [tero sparse](https://github.com/lobelia-earth/tero-sparse).
 
 ## Todos
 
