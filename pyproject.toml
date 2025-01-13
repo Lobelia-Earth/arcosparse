@@ -15,7 +15,20 @@ pystac = ">=1.8.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
+isort = "^5.13.2"
+flake8 = "^7.1.1"
+bandit = "^1.8.2"
+pyright = "^1.1.391"
+pytest = "^8.3.4"
+
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 79
+
+[tool.isort]
+profile = "black"
+line_length = 79

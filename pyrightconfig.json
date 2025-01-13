@@ -1,0 +1,7 @@
+{
+    "include": ["src", "tests"],
+    "exclude": ["__pycache__", "build", "dist", ".venv"],
+    // "strict": ["*"], When we are ready to enforce strict typing on everything
+    "reportUnusedVariable": true,  
+    "reportMissingImports": true,
+}

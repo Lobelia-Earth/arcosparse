@@ -1,8 +1,8 @@
-from main import subset
-from models import RequestedCoordinate
+from src.main import subset
+from src.models import RequestedCoordinate
 
 if __name__ == "__main__":
-    url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked"
+    url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked"  # noqa
 
     # TODO: we should also be able to requests variables
     request = {
@@ -18,12 +18,13 @@ if __name__ == "__main__":
             coodinate_id="longitude",
         ),
         # TODO: handle the elevation and depth problem if needed
-        # TODO: fix the problem with the elevation, cannot request the min and max
+        # TODO: fix the problem with the elevation,
+        # cannot request the min and max two many chunks to create
         "elevation": RequestedCoordinate(
             maximum=120, minimum=-10, coodinate_id="elevation"
         ),
     }
-    url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/dataset.stac.json"
+    url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/dataset.stac.json"  # noqa
 
     # should download 3 chunks
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite

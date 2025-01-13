@@ -7,7 +7,7 @@ from typing import Optional
 import pandas as pd
 import requests
 
-from models import OutputCoordinate
+from src.models import OutputCoordinate
 
 
 def download_and_convert_to_pandas(
@@ -39,7 +39,8 @@ def download_and_convert_to_pandas(
             if first_done:
                 query += " AND"
             first_done = True
-            query += f" {coordinate.coordinate_id} >= {coordinate.minimum} AND {coordinate.coordinate_id} <= {coordinate.maximum}"
+            query += f" {coordinate.coordinate_id} >= {coordinate.minimum} "
+            f"AND {coordinate.coordinate_id} <= {coordinate.maximum}"
     # TODO: add some logger debug here
     with tempfile.NamedTemporaryFile(
         suffix=".sqlite", delete=True
@@ -53,7 +54,7 @@ def download_and_convert_to_pandas(
 
 
 if __name__ == "__main__":
-    url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked/WDIR/34.0.0.0.sqlite"
+    url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked/WDIR/34.0.0.0.sqlite"  # noqa
     response = requests.get(url_file)
     response.raise_for_status()
     # db_path = "your_database.sqlite"
@@ -70,13 +71,6 @@ if __name__ == "__main__":
         print(f"Database file downloaded to temporary file: {temp_file.name}")
         with sqlite3.connect(temp_file.name) as connection:
             connection = sqlite3.connect(temp_file.name)
-            # connection.executescript(database_content.read())
-
-            # Show table names
-            # cursor = connection.cursor()
-            # cursor.execute("SELECT name FROM sqlite_master WHERE type='table';")
-            # print(cursor.fetchall())
-
             # Show column names
             cursor = connection.cursor()
             cursor.execute("PRAGMA table_info(data)")
