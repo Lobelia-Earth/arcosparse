@@ -1,4 +1,3 @@
-import bisect
 import math
 from itertools import product
 from typing import Optional
@@ -8,81 +7,7 @@ from typing import Optional
 #     ChunkType,
 #     Coordinate,
 # )
-from models import (
-    CHUNK_INDEX_INDICES,
-    ChunkType,
-    Coordinate,
-)
-
-
-# TODO: creates specific tests for this function
-# TODO: handle geometric chunking
-def get_chunks_indexes_for_coordinate_old(
-    requested_minimum: Optional[float],
-    requested_maximum: Optional[float],
-    coordinate: Coordinate,
-) -> tuple[int, int]:
-    """
-    Given the requested data and the metadata about the coordinate,
-    returns the indexes of the chunks that need to be downloaded.
-    """
-    maximum_value = coordinate.maximum
-    minimum_value = coordinate.minimum
-    # TODO: try to get rid of this type ignores
-    # check how bisect works with the time values
-    values = coordinate.values
-    step_value = coordinate.step
-    if not values and (
-        maximum_value is not None
-        and minimum_value is not None
-        and step_value is not None
-    ):
-        values = [minimum_value]  # type: ignore
-        for _ in range(
-            0, math.ceil((maximum_value - minimum_value) / step_value)  # type: ignore
-        ):
-            values.append(values[-1] + step_value)  # type: ignore
-    elif not values:
-        raise ValueError(
-            f"No values could be parsed for coordinate {coordinate}"
-        )
-
-    values.sort()
-    if requested_minimum is None or requested_minimum < values[0]:  # type: ignore
-        requested_minimum = values[0]  # type: ignore
-    if requested_maximum is None or requested_maximum > values[-1]:  # type: ignore
-        requested_maximum = values[-1]  # type: ignore
-
-    index_left_minimum = bisect.bisect_left(values, requested_minimum)  # type: ignore
-    if index_left_minimum == len(values) - 1 or abs(
-        values[index_left_minimum] - requested_minimum  # type: ignore
-    ) <= abs(
-        values[index_left_minimum + 1] - requested_minimum  # type: ignore
-    ):
-        chunk_of_requested_minimum = math.floor(
-            (index_left_minimum) / coordinate.chunk_length
-        )
-    else:
-        chunk_of_requested_minimum = math.floor(
-            (index_left_minimum + 1) / coordinate.chunk_length
-        )
-
-    index_right_maximum = bisect.bisect_right(values, requested_maximum)  # type: ignore
-    index_right_maximum = index_right_maximum - 1
-    if (
-        index_right_maximum == len(values) - 1
-        or index_right_maximum == len(values)
-        or abs(values[index_right_maximum] - requested_maximum)  # type: ignore
-        <= abs(values[index_right_maximum + 1] - requested_maximum)  # type: ignore
-    ):
-        chunk_of_requested_maximum = math.floor(
-            (index_right_maximum) / coordinate.chunk_length
-        )
-    else:
-        chunk_of_requested_maximum = math.floor(
-            (index_right_maximum + 1) / coordinate.chunk_length
-        )
-    return chunk_of_requested_minimum, chunk_of_requested_maximum
+from src.models import CHUNK_INDEX_INDICES, ChunkType, Coordinate
 
 
 # TODO: creates specific tests for this function

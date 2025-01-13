@@ -4,7 +4,7 @@ from typing import Literal, Optional, Type, TypeVar
 
 import pystac
 
-from utils import date_to_timestamp
+from src.utils import date_to_timestamp
 
 
 class ChunkType(Enum):
@@ -129,7 +129,8 @@ class Asset:
         if not variables_to_parse:
             raise ValueError(
                 f"No variables found in the metadata for {asset_name} asset. "
-                f"Requested variables: {variables} while available variables: {variables_asset}"
+                f"Requested variables: {variables} "
+                f"while available variables: {variables_asset}"
             )
         return cls(
             asset_id=asset_name,
