@@ -1,4 +1,5 @@
 import pandas as pd
+import pystac
 
 from chunk_calculator import (
     get_chunk_indexes_for_coordinate,
@@ -6,6 +7,7 @@ from chunk_calculator import (
 )
 from downloader import download_and_convert_to_pandas
 from models import (
+    Asset,
     ChunksToDownload,
     OutputCoordinate,
     RequestedCoordinate,
@@ -20,14 +22,17 @@ MAX_CONCURRENT_REQUESTS = 10
 
 def subset(
     request: dict[str, RequestedCoordinate],
-    variables: list[Variable],
-    url: str,
+    variables: list[str],
+    url_metadata: str,
 ) -> pd.DataFrame:
-
-    chunks_to_download = get_chunks_combinations(request, variables)
+    metadata = pystac.Item.from_file(url_metadata)
+    asset = Asset.from_metadata_item(metadata, variables, "timeChunked")
+    chunks_to_download = get_chunks_combinations(request, asset.variables)
     print("chunk indexes:", chunks_to_download)
     chunks_to_download_names: dict[str, ChunksToDownload] = (
-        get_chunks_all_chunks_names(chunks_to_download, request, variables)
+        get_chunks_all_chunks_names(
+            chunks_to_download, request, asset.variables
+        )
     )
     print("chunk indexes names :", chunks_to_download_names)
     tasks = []
@@ -36,7 +41,7 @@ def subset(
         for chunk in chunks.chunks_names:
             tasks.append(
                 (
-                    url,
+                    asset.url,
                     variable_id,
                     chunk,
                     output_coordinates,
