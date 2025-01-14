@@ -1,5 +1,5 @@
-from src.chunk_calculator import get_chunk_indexes_for_coordinate
-from src.models import ChunkType, Coordinate
+from src.sparsub.chunk_calculator import get_chunk_indexes_for_coordinate
+from src.sparsub.models import ChunkType, Coordinate
 
 EXAMPLE_COORDINATE_ARITHMETIC = Coordinate(
     coordinate_id="time",

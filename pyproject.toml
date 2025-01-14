@@ -5,6 +5,7 @@ description = "Helper to sdownload and subset sparse data from Copernicus Marine
 authors = [{name = "renaudjester",  email = "renaud.jester@lobelia.earth"}, {name = "Lobelia", email = "developer@lobelia.earth"}]
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
+packages = [{include = "sparsub"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"

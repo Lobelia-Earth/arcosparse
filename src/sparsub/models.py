@@ -4,7 +4,7 @@ from typing import Literal, Optional, Type, TypeVar
 
 import pystac
 
-from src.utils import date_to_timestamp
+from src.sparsub.utils import date_to_timestamp
 
 
 class ChunkType(Enum):
