@@ -1,19 +1,19 @@
 import pandas as pd
 import pystac
 
-from src.chunk_calculator import (
+from src.sparsub.chunk_calculator import (
     get_chunk_indexes_for_coordinate,
     get_full_chunks_names,
 )
-from src.downloader import download_and_convert_to_pandas
-from src.models import (
+from src.sparsub.downloader import download_and_convert_to_pandas
+from src.sparsub.models import (
     Asset,
     ChunksToDownload,
     OutputCoordinate,
     RequestedCoordinate,
     Variable,
 )
-from src.utils import run_concurrently
+from src.sparsub.utils import run_concurrently
 
 # from utils import run_concurrently
 
