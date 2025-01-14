@@ -1,5 +1,5 @@
 [project]
-name = "sparse-subsetter"
+name = "sparsub"
 version = "0.1.0"
 description = "Helper to sdownload and subset sparse data from Copernicus Marine Services"
 authors = [{name = "renaudjester",  email = "renaud.jester@lobelia.earth"}, {name = "Lobelia", email = "developer@lobelia.earth"}]
