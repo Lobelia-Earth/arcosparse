@@ -47,7 +47,7 @@ def download_and_convert_to_pandas(
         temp_file.write(response.content)
         temp_file.flush()
         with sqlite3.connect(temp_file.name) as connection:
-            df = pd.read_sql("SELECT * FROM data", connection)
+            df = pd.read_sql(query, connection)
     print("Done downloading")
     return df
 

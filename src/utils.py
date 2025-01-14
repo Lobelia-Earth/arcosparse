@@ -1,5 +1,6 @@
 import concurrent.futures
-from typing import Any, Callable, Sequence, TypeVar
+from datetime import datetime
+from typing import Any, Callable, Sequence, TypeVar, Union
 
 _T = TypeVar("_T")
 
@@ -29,3 +30,9 @@ def run_concurrently(
             out.append(data)
             # pbar.update(1)
     return out
+
+
+def date_to_timestamp(date: Union[str, float]) -> float:
+    if isinstance(date, float) or isinstance(date, int):
+        return date
+    return datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").timestamp()
