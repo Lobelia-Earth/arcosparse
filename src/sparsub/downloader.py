@@ -19,7 +19,9 @@ def download_and_convert_to_pandas(
     print("downloading", f"{base_url}/{variable_id}/{chunk_name}.sqlite")
     # TODO: create a proper request with headers retries etc
     # see the toolbox for examples (sessions.py)
-    response = requests.get(f"{base_url}/{variable_id}/{chunk_name}.sqlite")
+    response = requests.get(
+        f"{base_url}/{variable_id}/{chunk_name}.sqlite", timeout=600
+    )
     # means that the chunk does not exist
     if response.status_code == 403:
         print(f"Chunk {chunk_name} does not exist")
@@ -55,7 +57,7 @@ def download_and_convert_to_pandas(
 
 if __name__ == "__main__":
     url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked/WDIR/34.0.0.0.sqlite"  # noqa
-    response = requests.get(url_file)
+    response = requests.get(url_file, timeout=600)
     response.raise_for_status()
     # db_path = "your_database.sqlite"
     # with open(db_path, "wb") as f:

@@ -14,16 +14,16 @@ jobs:
       run: pip install poetry && poetry install
 
     - name: Run Black
-      run: black --check --line-length 79 .
+      run: poetry run black --check src/
 
     - name: Run isort
-      run: isort --check-only --line-length 79 .
+      run: poetry run isort --check-only src/
 
     - name: Run Flake8
-      run: flake8 .
+      run: poetry run flake8 src/
 
-    - name: Run Mypy
-      run: mypy .
+    - name: Run Pyright
+      run: poetry run pyright src/
 
     - name: Run Bandit
-      run: bandit -r .
+      run: poetry run bandit -r src/
