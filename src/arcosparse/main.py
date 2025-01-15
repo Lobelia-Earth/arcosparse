@@ -29,7 +29,7 @@ def subset(
 ) -> pd.DataFrame:
     metadata = pystac.Item.from_file(url_metadata)
     if request.platform_ids:
-        assert NotImplementedError("Platform subsetting not implemented yet")
+        raise NotImplementedError("Platform subsetting not implemented yet")
     chunks_to_download_names, asset_url = choose_best_asset(metadata, request)
     tasks = []
     for variable_id, chunks in chunks_to_download_names.items():
