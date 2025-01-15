@@ -1,4 +1,4 @@
-name: Unit/Integration tests
+name: Unit and integration tests
 
 on: 
   pull_request:

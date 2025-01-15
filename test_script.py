@@ -4,7 +4,6 @@ from src.arcosparse.models import RequestedCoordinate, UserRequest
 if __name__ == "__main__":
     url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked"  # noqa
 
-    # TODO: we should also be able to requests variables
     request = UserRequest(
         time=RequestedCoordinate(
             minimum=1731888000, maximum=1734516000, coodinate_id="time"
