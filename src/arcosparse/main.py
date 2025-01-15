@@ -1,3 +1,5 @@
+from typing import Literal, Optional
+
 import pandas as pd
 import pystac
 
@@ -11,6 +13,7 @@ from src.arcosparse.models import (
     ChunksToDownload,
     OutputCoordinate,
     RequestedCoordinate,
+    UserRequest,
     Variable,
 )
 from src.arcosparse.utils import run_concurrently
@@ -21,27 +24,20 @@ MAX_CONCURRENT_REQUESTS = 10
 
 
 def subset(
-    request: dict[str, RequestedCoordinate],
-    variables: list[str],
+    request: UserRequest,
     url_metadata: str,
 ) -> pd.DataFrame:
     metadata = pystac.Item.from_file(url_metadata)
-    asset = Asset.from_metadata_item(metadata, variables, "timeChunked")
-    chunks_to_download = get_chunks_combinations(request, asset.variables)
-    print("chunk indexes:", chunks_to_download)
-    chunks_to_download_names: dict[str, ChunksToDownload] = (
-        get_chunks_all_chunks_names(
-            chunks_to_download, request, asset.variables
-        )
-    )
-    print("chunk indexes names :", chunks_to_download_names)
+    if request.platform_ids:
+        assert NotImplementedError("Platform subsetting not implemented yet")
+    chunks_to_download_names, asset_url = choose_best_asset(metadata, request)
     tasks = []
     for variable_id, chunks in chunks_to_download_names.items():
         output_coordinates = chunks.output_coordinates
         for chunk in chunks.chunks_names:
             tasks.append(
                 (
-                    asset.url,
+                    asset_url,
                     variable_id,
                     chunk,
                     output_coordinates,
@@ -55,16 +51,61 @@ def subset(
     return pd.concat([result for result in results if result is not None])
 
 
+def choose_best_asset(
+    metadata: pystac.Item,
+    request: UserRequest,
+) -> tuple[dict[str, ChunksToDownload], str]:
+    chunks_time_chunked, time_chunked_url = get_all_chunks_to_download(
+        metadata, request, "timeChunked"
+    )
+    chunks_geo_chunked, geo_chunked_url = get_all_chunks_to_download(
+        metadata, request, "geoChunked"
+    )
+    score_time_chunked = sum(
+        [len(chunks.chunks_names) for _, chunks in chunks_time_chunked.items()]
+    )
+    score_geo_chunked = sum(
+        [len(chunks.chunks_names) for _, chunks in chunks_geo_chunked.items()]
+    )
+    print("score time chunked", score_time_chunked)
+    print("score geo chunked", score_geo_chunked)
+    # geo*2 because it's in the code of tero-sparse
+    # TODO: ask why this is the case
+    if score_time_chunked <= 2 * score_geo_chunked:
+        print("Downloading using time chunked")
+        return chunks_time_chunked, time_chunked_url
+    else:
+        print("Downloading using geo chunked")
+        return chunks_geo_chunked, geo_chunked_url
+
+
+def get_all_chunks_to_download(
+    metadata: pystac.Item,
+    request: UserRequest,
+    asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
+) -> tuple[dict[str, ChunksToDownload], str]:
+    asset = Asset.from_metadata_item(metadata, request.variables, asset_name)
+
+    chunks_to_download = get_chunks_combinations(request, asset.variables)
+    print("chunk indexes:", chunks_to_download)
+    chunks_to_download_names: dict[str, ChunksToDownload] = (
+        get_chunks_all_chunks_names(
+            chunks_to_download, request, asset.variables
+        )
+    )
+    return chunks_to_download_names, asset.url
+
+
 # TODO: create tests for this function
 def get_chunks_combinations(
-    request: dict[str, RequestedCoordinate], variables
+    request: UserRequest, variables: list[Variable]
 ) -> dict[str, dict[str, tuple[int, int]]]:
     chunks_per_variable = {}
     for variable in variables:
         chunks_per_coordinate = {}
         for coordinate in variable.coordinates:
-            requested_subset = request.get(
-                coordinate.coordinate_id,
+            requested_subset: Optional[RequestedCoordinate] = getattr(
+                request, coordinate.coordinate_id, None
             )
             if requested_subset:
                 chunks_per_coordinate[coordinate.coordinate_id] = (
@@ -84,7 +125,7 @@ def get_chunks_combinations(
 
 def get_chunks_all_chunks_names(
     chunks_indexes: dict[str, dict[str, tuple[int, int]]],
-    request: dict[str, RequestedCoordinate],
+    request: UserRequest,
     variables: list[Variable],
 ) -> dict[str, ChunksToDownload]:
     chunks_to_download_names: dict[str, ChunksToDownload] = {}
@@ -97,7 +138,9 @@ def get_chunks_all_chunks_names(
         ][0]
         output_coordinates = []
         for coordinate in variable.coordinates:
-            requested_data = request.get(coordinate.coordinate_id)
+            requested_data: Optional[RequestedCoordinate] = getattr(
+                request, coordinate.coordinate_id, None
+            )
             if (
                 requested_data
                 and requested_data.minimum

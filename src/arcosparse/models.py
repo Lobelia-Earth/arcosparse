@@ -185,12 +185,14 @@ class RequestedCoordinate:
     coodinate_id: str
 
 
-# @dataclass
-# class UserRequest:
-#     time: RequestedCoordinate
-#     depth: RequestedCoordinate
-#     latitude: RequestedCoordinate
-#     longitude: RequestedCoordinate
+@dataclass
+class UserRequest:
+    time: RequestedCoordinate
+    elevation: RequestedCoordinate
+    latitude: RequestedCoordinate
+    longitude: RequestedCoordinate
+    variables: list[str]
+    platform_ids: list[str]
 
 
 @dataclass
