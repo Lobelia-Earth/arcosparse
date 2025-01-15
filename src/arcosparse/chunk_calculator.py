@@ -7,7 +7,7 @@ from typing import Optional
 #     ChunkType,
 #     Coordinate,
 # )
-from src.sparsub.models import CHUNK_INDEX_INDICES, ChunkType, Coordinate
+from src.arcosparse.models import CHUNK_INDEX_INDICES, ChunkType, Coordinate
 
 
 # TODO: creates specific tests for this function
