@@ -1,11 +1,11 @@
 [project]
-name = "sparsub"
+name = "arcosparse"
 version = "0.1.0"
 description = "Helper to sdownload and subset sparse data from Copernicus Marine Services"
 authors = [{name = "renaudjester",  email = "renaud.jester@lobelia.earth"}, {name = "Lobelia", email = "developer@lobelia.earth"}]
 readme = "README.md"
 requires-python = ">=3.9,<4.0"
-packages = [{include = "src/sparsub", from = "src"}]
+packages = [{include = "src/arcosparse", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.9"

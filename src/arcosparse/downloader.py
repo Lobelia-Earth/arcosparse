@@ -7,7 +7,7 @@ from typing import Optional
 import pandas as pd
 import requests
 
-from src.sparsub.models import OutputCoordinate
+from src.arcosparse.models import OutputCoordinate
 
 
 def download_and_convert_to_pandas(
