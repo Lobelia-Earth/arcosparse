@@ -7,7 +7,7 @@ A subsetter for the MDS sparse data. Based on [tero sparse](https://github.com/l
 ### Features
 
 - [x] Change the input to be the stac assets (or the URL to the stac) and parse it
-- [] Choose the best asset for the request
+- [x] Choose the best asset for the request
 - [] Platform subsetting (use the platform index)
 - [] Return the platformIDs available for the dataset to be able to show it to the user and check the platform is correct before subsetting
 - [] it would make sense to have default elevation and time windows (otherwise it can be a looooot of chunks)
