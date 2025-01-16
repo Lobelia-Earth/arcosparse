@@ -33,6 +33,8 @@ def download_and_convert_to_pandas(
     # database_content = io.BytesIO(response.content)
     # connection = sqlite3.connect("file::memory:?cache=shared", uri=True)
     # connection.executescript(database_content.read().decode('utf-8'))
+    # OR use a thread safe csv writer:
+    # https://stackoverflow.com/questions/33107019/multiple-threads-writing-to-the-same-csv-in-python # noqa
     query = "SELECT * FROM data"
     if output_coordinates:
         query += " WHERE"
