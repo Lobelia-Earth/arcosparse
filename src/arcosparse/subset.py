@@ -3,9 +3,7 @@ import pystac
 
 from src.arcosparse.chunk_calculator import ChunkCalculator
 from src.arcosparse.downloader import download_and_convert_to_pandas
-from src.arcosparse.models import (
-    UserRequest,
-)
+from src.arcosparse.models import UserRequest
 from src.arcosparse.utils import run_concurrently
 
 MAX_CONCURRENT_REQUESTS = 10
