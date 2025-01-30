@@ -19,3 +19,6 @@ check-format: ## Apply formatting, check only
 
 test: ## Run tests
 	poetry run pytest tests/
+
+dev-test: ## Run one full run, for development
+	poetry run python test_script.py
