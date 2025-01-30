@@ -4,6 +4,7 @@ from typing import Literal, Optional
 
 import pystac
 
+from src.arcosparse.logger import logger
 from src.arcosparse.models import (
     CHUNK_INDEX_INDICES,
     Asset,
@@ -42,15 +43,15 @@ class ChunkCalculator:
         chunks_geo_chunked, geo_chunked_url, number_chunks_geo_chunked = (
             self._get_chunks_to_download("geoChunked")
         )
-        print("score time chunked", number_chunks_time_chunked)
-        print("score geo chunked", 2 * number_chunks_geo_chunked)
+        logger.debug(f"score time chunked {number_chunks_time_chunked}")
+        logger.debug(f"score geo chunked {2 * number_chunks_geo_chunked}")
         # geo*2 because it's in the code of tero-sparse
         # TODO: ask why this is the case
         if number_chunks_time_chunked <= 2 * number_chunks_geo_chunked:
-            print("Downloading using time chunked")
+            logger.info("Downloading using time chunked")
             return chunks_time_chunked, time_chunked_url
         else:
-            print("Downloading using geo chunked")
+            logger.info("Downloading using geo chunked")
             return chunks_geo_chunked, geo_chunked_url
 
     # TODO: create tests for this function
@@ -127,12 +128,12 @@ class ChunkCalculator:
         index_min = 0
         index_max = 0
         if coordinate.chunk_length:
-            print(
-                "Getting chunks indexes for coordinate",
-                coordinate.chunk_length,
+            logger.debug(
+                f"Getting chunks indexes for coordinate"
+                f"{coordinate.chunk_length}",
             )
             if coordinate.chunk_type == ChunkType.ARITHMETIC:
-                print("Arithmetic chunking")
+                logger.debug("Arithmetic chunking")
                 index_min = self._get_chunks_index_arithmetic(
                     requested_minimum,
                     coordinate.chunk_reference_coordinate,
@@ -144,7 +145,7 @@ class ChunkCalculator:
                     coordinate.chunk_length,
                 )
             elif coordinate.chunk_type == ChunkType.GEOMETRIC:
-                print("Geometric chunking")
+                logger.debug("Geometric chunking")
                 index_min = self._get_chunks_index_geometric(
                     requested_minimum,
                     coordinate.chunk_reference_coordinate,

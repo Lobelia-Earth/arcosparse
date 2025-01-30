@@ -6,6 +6,7 @@ from typing import Optional
 # check if we could use polars instead of pandas
 import pandas as pd
 
+from src.arcosparse.logger import logger
 from src.arcosparse.models import OutputCoordinate, UserConfiguration
 from src.arcosparse.sessions import ConfiguredRequestsSession
 
@@ -17,7 +18,7 @@ def download_and_convert_to_pandas(
     output_coordinates: list[OutputCoordinate],
     user_configuration: UserConfiguration,
 ) -> Optional[pd.DataFrame]:
-    print("downloading", f"{base_url}/{variable_id}/{chunk_name}.sqlite")
+    logger.debug(f"downloading {base_url}/{variable_id}/{chunk_name}.sqlite")
     # TODO: create a proper request with headers retries etc
     # see the toolbox for examples (sessions.py)
     with ConfiguredRequestsSession(
@@ -31,7 +32,7 @@ def download_and_convert_to_pandas(
         )
         # means that the chunk does not exist
         if response.status_code == 403:
-            print(f"Chunk {chunk_name} does not exist")
+            logger.debug(f"Chunk {chunk_name} does not exist")
             return None
         response.raise_for_status()
         # TODO: check that this is okay to save the file in a temporary file
@@ -62,7 +63,7 @@ def download_and_convert_to_pandas(
             temp_file.flush()
             with sqlite3.connect(temp_file.name) as connection:
                 df = pd.read_sql(query, connection)
-        print("Done downloading")
+        logger.debug("Done downloading")
         return df
 
 
