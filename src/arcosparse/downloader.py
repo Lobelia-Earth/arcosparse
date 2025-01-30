@@ -6,7 +6,7 @@ from typing import Optional
 # check if we could use polars instead of pandas
 import pandas as pd
 
-from src.arcosparse.models import OutputCoordinate
+from src.arcosparse.models import OutputCoordinate, UserConfiguration
 from src.arcosparse.sessions import ConfiguredRequestsSession
 
 
@@ -15,19 +15,16 @@ def download_and_convert_to_pandas(
     variable_id: str,
     chunk_name: str,
     output_coordinates: list[OutputCoordinate],
-    disable_ssl_context: bool = False,
-    trust_env: bool = False,
-    ssl_certificate_path: Optional[str] = None,
-    extra_params: Optional[dict[str, str]] = None,
+    user_configuration: UserConfiguration,
 ) -> Optional[pd.DataFrame]:
     print("downloading", f"{base_url}/{variable_id}/{chunk_name}.sqlite")
     # TODO: create a proper request with headers retries etc
     # see the toolbox for examples (sessions.py)
     with ConfiguredRequestsSession(
-        disable_ssl_context,
-        trust_env,
-        ssl_certificate_path,
-        extra_params or {},
+        user_configuration.disable_ssl,
+        user_configuration.trust_env,
+        user_configuration.ssl_certificate_path,
+        user_configuration.extra_params,
     ) as session:
         response = session.get(
             f"{base_url}/{variable_id}/{chunk_name}.sqlite",

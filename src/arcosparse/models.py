@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Literal, Optional, Type, TypeVar
 
@@ -193,6 +193,14 @@ class UserRequest:
     longitude: RequestedCoordinate
     variables: list[str]
     platform_ids: list[str]
+
+
+@dataclass
+class UserConfiguration:
+    disable_ssl: bool = False
+    trust_env: bool = True
+    ssl_certificate_path: Optional[str] = None
+    extra_params: dict[str, str] = field(default_factory=dict)
 
 
 @dataclass
