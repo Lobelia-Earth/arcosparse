@@ -13,17 +13,5 @@ jobs:
     - name: Install dependencies
       run: pip install poetry && poetry install
 
-    - name: Run Black
-      run: poetry run black --check src/
-
-    - name: Run isort
-      run: poetry run isort --check-only src/
-
-    - name: Run Flake8
-      run: poetry run flake8 src/
-
-    - name: Run Pyright
-      run: poetry run pyright src/
-
-    - name: Run Bandit
-      run: poetry run bandit -r src/
+    - name: Run Format Check
+      run: make check-format
