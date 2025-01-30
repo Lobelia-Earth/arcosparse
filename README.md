@@ -13,6 +13,10 @@ A subsetter for the MDS sparse data. Based on [tero sparse](https://github.com/l
 - [] it would make sense to have default elevation and time windows (otherwise it can be a looooot of chunks)
 - [] Estimate the amount of data that will be downloaded (difficult with sparse dataset)
 - [] add tests to the repo
+- [] Create proper `requests` sessions to be able use proxies and different configurations
+- [] Think of ways to download as much data as possible without out of memory errors (maybe some writing to a local file)
+- [] Release and add it to PyPI and conda  (maybe with a on workflow call action to trigger the bump, the push and the commit)
+- [] Add logger
 
 ### Fixes
 
