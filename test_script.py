@@ -1,9 +1,13 @@
-from src.arcosparse.models import RequestedCoordinate, UserRequest
+from src.arcosparse.models import (
+    RequestedCoordinate,
+    UserConfiguration,
+    UserRequest,
+)
 from src.arcosparse.subset import subset
 
 if __name__ == "__main__":
     url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked"  # noqa
-
+    user_configuration = UserConfiguration()
     request = UserRequest(
         time=RequestedCoordinate(
             minimum=1731888000, maximum=1734516000, coodinate_id="time"
@@ -31,5 +35,5 @@ if __name__ == "__main__":
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite
     # 2024-12-16 08:58:00     258048 15.0.0.0.sqlite
     # 2024-12-18 19:49:59      77824 16.0.0.0.sqlite
-    pandas = subset(request, url_metadata)
+    pandas = subset(request, user_configuration, url_metadata)
     print(pandas)
