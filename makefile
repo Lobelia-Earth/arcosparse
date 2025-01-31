@@ -22,3 +22,22 @@ test: ## Run tests
 
 dev-test: ## Run one full run, for development
 	poetry run python test_script.py
+
+publish: ## Publish package to PyPi
+	poetry publish --build --username __token__ --password "$(TOKEN)" 
+
+install-poetry: ## Install poetry
+	pip install poetry==2.0.0
+
+install: install-poetry ## Install dependencies
+	poetry install
+
+bump-version-patch: ## Bump version patch
+	poetry version patch
+
+bump-version-minor: ## Bump version minor
+	poetry version minor
+
+bump-version-major: ## Bump version major
+	poetry version major
+

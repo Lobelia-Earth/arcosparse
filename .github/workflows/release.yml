@@ -1,0 +1,29 @@
+on:
+  workflow_dispatch: {}
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_BOT_RW_TOKEN }}
+
+      - name: Install dependencies
+        run: make install
+
+      - name: Build and publish Pypi package
+        run: make publish TOKEN=${{ secrets.PYPI_TOKEN }}
+
+      - name: Set VERSION environment variable
+        id: set-version
+        run: echo "VERSION=$(poetry version --short)" >> $GITHUB_OUTPUT
+
+      - name: Create tag
+        run: |
+          git tag v${{ steps.set-version.outputs.VERSION }}
+          git push origin --tags
+
+      - name: Create Github release
+        run: gh release create v${{ steps.set-version.outputs.VERSION }} --generate-notes
