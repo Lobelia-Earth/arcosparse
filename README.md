@@ -20,7 +20,7 @@ A subsetter for the MDS sparse data. Based on [tero sparse](https://github.com/l
 
 ### Fixes
 
--[] Have imports so that pytest and scripts work
+-[x] Have imports so that pytest and scripts work
 
 ## Meeting notes
 
