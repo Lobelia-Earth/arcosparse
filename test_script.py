@@ -33,7 +33,7 @@ if __name__ == "__main__":
         variables=["ATMP", "CDOM"],
         platform_ids=[],
     )
-    url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/dataset.stac.json"  # noqa
+    url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--history/dataset.stac.json"  # noqa
 
     # should download 3 chunks
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite

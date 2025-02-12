@@ -1,6 +1,6 @@
 import pystac
 
-from arcosparse.subset import ChunkCalculator
+from arcosparse.subset import select_best_asset_and_get_chunks
 from src.arcosparse.models import RequestedCoordinate, UserRequest
 
 url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/dataset.stac.json"  # noqa
@@ -75,20 +75,21 @@ PLATFORM_REQUEST = UserRequest(
 class TestChoosingArcoAsset:
     def test_choose_time_chunked_for_long_geo_range(self):
         metadata = pystac.Item.from_file(url_metadata)
-        chunk_calculator = ChunkCalculator(metadata, LONG_GEO_RANGE_REQUEST)
-        _, asset_url = chunk_calculator.select_best_asset_and_get_chunks()
+        _, asset_url = select_best_asset_and_get_chunks(
+            metadata, LONG_GEO_RANGE_REQUEST
+        )
         assert "timeChunked" in asset_url
 
     def test_choose_geo_chunked_for_long_time_range(self):
         metadata = pystac.Item.from_file(url_metadata)
-        chunk_calculator = ChunkCalculator(metadata, LONG_TIME_RANGE_REQUEST)
-        _, asset_url = chunk_calculator.select_best_asset_and_get_chunks()
+        _, asset_url = select_best_asset_and_get_chunks(
+            metadata, LONG_TIME_RANGE_REQUEST
+        )
         assert "geoChunked" in asset_url
 
     def test_choose_platform_chunked_for_long_time_range(self):
         metadata = pystac.Item.from_file(url_metadata)
         try:
-            chunk_calculator = ChunkCalculator(metadata, PLATFORM_REQUEST)
-            _, _ = chunk_calculator.select_best_asset_and_get_chunks()
+            _, _ = select_best_asset_and_get_chunks(metadata, PLATFORM_REQUEST)
         except Exception as e:
             assert "Platform subsetting not implemented yet" in str(e)
