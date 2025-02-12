@@ -1,4 +1,4 @@
-from src.arcosparse.chunk_calculator import ChunkCalculator
+from src.arcosparse.chunk_calculator import _get_chunk_indexes_for_coordinate
 from src.arcosparse.models import ChunkType, Coordinate
 
 EXAMPLE_COORDINATE_ARITHMETIC = Coordinate(
@@ -30,29 +30,23 @@ EXAMPLE_COORDINATE_GEOMETRIC = Coordinate(
 
 class TestChunkCalculator:
     def test_arithmetic_chunking_returns_expected_chunks(self):
-        chunk_calculator = ChunkCalculator(None, None)  # type: ignore
         requested_minimum = 1731888000
         requested_maximum = 1734516000
-        index_min, index_max = (
-            chunk_calculator._get_chunk_indexes_for_coordinate(
-                requested_minimum,
-                requested_maximum,
-                EXAMPLE_COORDINATE_ARITHMETIC,
-            )
+        index_min, index_max = _get_chunk_indexes_for_coordinate(
+            requested_minimum,
+            requested_maximum,
+            EXAMPLE_COORDINATE_ARITHMETIC,
         )
         assert index_min == 14
         assert index_max == 16
 
     def test_geometric_chunking_returns_expected_chunks(self):
-        chunk_calculator = ChunkCalculator(None, None)  # type: ignore
         requested_minimum = -4349
         requested_maximum = 12000
-        index_min, index_max = (
-            chunk_calculator._get_chunk_indexes_for_coordinate(
-                requested_minimum,
-                requested_maximum,
-                EXAMPLE_COORDINATE_GEOMETRIC,
-            )
+        index_min, index_max = _get_chunk_indexes_for_coordinate(
+            requested_minimum,
+            requested_maximum,
+            EXAMPLE_COORDINATE_GEOMETRIC,
         )
         assert index_min == -869
         assert index_max == 2400
