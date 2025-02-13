@@ -45,16 +45,15 @@ def download_and_convert_to_pandas(
         # https://stackoverflow.com/questions/33107019/multiple-threads-writing-to-the-same-csv-in-python # noqa
         query = "SELECT * FROM data"
         if output_coordinates:
-            query += " WHERE"
-            first_done = False
-            for coordinate in output_coordinates:
-                if first_done:
-                    query += " AND"
-                first_done = True
-                query += (
-                    f" {coordinate.coordinate_id} >= {coordinate.minimum} "
-                )
-                f"AND {coordinate.coordinate_id} <= {coordinate.maximum}"
+            query += " WHERE "
+            query += " AND ".join(
+                [
+                    f"{coordinate.coordinate_id} >= {coordinate.minimum} "
+                    f"AND {coordinate.coordinate_id} <= {coordinate.maximum}"
+                    for coordinate in output_coordinates
+                ]
+            )
+
         # TODO: add some logger debug here
         with tempfile.NamedTemporaryFile(
             suffix=".sqlite", delete=True
