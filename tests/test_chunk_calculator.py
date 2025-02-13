@@ -1,4 +1,4 @@
-from src.arcosparse.chunk_calculator import _get_chunk_indexes_for_coordinate
+from arcosparse.chunk_selector import _get_chunk_indexes_for_coordinate
 from src.arcosparse.models import ChunkType, Coordinate
 
 EXAMPLE_COORDINATE_ARITHMETIC = Coordinate(

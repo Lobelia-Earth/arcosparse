@@ -17,6 +17,7 @@ A subsetter for the MDS sparse data. Based on [tero sparse](https://github.com/l
 - [] Think of ways to download as much data as possible without out of memory errors (maybe some writing to a local file)
 - [] Release and add it to PyPI and conda  (maybe with a on workflow call action to trigger the bump, the push and the commit)
 - [x] Add logger
+- [] we should probably save the result in ORC or parquet (https://medium.com/@aiiaor/which-data-file-format-to-use-csv-json-parquet-avro-orc-e7a9acaaa7df, https://pandas.pydata.org/docs/reference/api/pandas.read_orc.html, https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.to_orc.html) to be able to write efficiently, then all of this can be saved opened using pandas
 
 ### Fixes
 

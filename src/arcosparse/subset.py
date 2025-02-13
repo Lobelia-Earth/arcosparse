@@ -1,7 +1,7 @@
 import pandas as pd
 import pystac
 
-from src.arcosparse.chunk_calculator import select_best_asset_and_get_chunks
+from arcosparse.chunk_selector import select_best_asset_and_get_chunks
 from src.arcosparse.downloader import download_and_convert_to_pandas
 from src.arcosparse.models import UserConfiguration, UserRequest
 from src.arcosparse.sessions import ConfiguredRequestsSession
