@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal, Optional, Type, TypeVar
+from typing import Literal, Optional, Type, TypeVar, Union
 
 import pystac
 
-from src.arcosparse.utils import date_to_timestamp
+from arcosparse.utils import date_to_timestamp
 
 
-class ChunkType(Enum):
+class ChunkType(str, Enum):
     ARITHMETIC = "default"
     GEOMETRIC = "symmetricGeometric"
 
@@ -23,7 +23,9 @@ class Coordinate:
     values: list
     coordinate_id: str
     unit: str
-    chunk_length: int
+    #: The chunk length can be a single value or a dictionary of possible
+    #: values depending on the type of the platform.
+    chunk_length: Union[int, dict[str, Optional[int]]]
     chunk_type: ChunkType
     chunk_reference_coordinate: float
     chunk_geometric_factor: float
@@ -40,7 +42,10 @@ class Coordinate:
         geometric_factor = view_dim.get("chunkGeometricFactor", 0)
         if isinstance(geometric_factor, dict):
             geometric_factor = geometric_factor.get(variable_id, 0)
-
+        if view_dim.get("chunkLenPerDataType", False):
+            chunk_length = view_dim["chunkLen"]
+        else:
+            chunk_length = view_dim["chunkLen"].get(variable_id, 0)
         # TODO: check validStartDate can be an int? if the time is timestamps
         # TODO: check if we can values or never with insitus?
         return cls(
@@ -53,7 +58,7 @@ class Coordinate:
             values=coordinate_information.get("values"),
             coordinate_id=coordinate_id,
             unit=view_dim["units"],
-            chunk_length=view_dim["chunkLen"].get(variable_id, 0),
+            chunk_length=chunk_length,
             chunk_type=ChunkType(view_dim.get("chunkType", "default")),
             chunk_reference_coordinate=view_dim.get("chunkRefCoord"),
             chunk_geometric_factor=geometric_factor,
@@ -89,7 +94,9 @@ class Variable:
             variable_id=variable_id,
             coordinates=[
                 Coordinate.from_metadata_item(
-                    asset, coordinate_id=coordinate_id, variable_id=variable_id
+                    asset,
+                    coordinate_id=coordinate_id,
+                    variable_id=variable_id,
                 )
                 for coordinate_id in asset.get("viewDims", {}).keys()
             ],
@@ -117,6 +124,7 @@ class Asset:
         item: pystac.Item,
         variables: list[str],
         asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
+        platforms_metadata: Optional[dict],
     ) -> Asset_type:
         assets = item.get_assets()
         variable_info = item.properties.get("cube:variables", {})
@@ -223,8 +231,7 @@ class ChunksToDownload:
     for the subset we want to download.
     """
 
+    platform_id: Optional[str]
     variable_id: str
-    # TODO: subset on platform_id
-    # platform_id: str
     chunks_names: set[str]
     output_coordinates: list[OutputCoordinate]

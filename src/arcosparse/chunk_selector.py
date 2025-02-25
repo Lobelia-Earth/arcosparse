@@ -4,8 +4,8 @@ from typing import Literal, Optional
 
 import pystac
 
-from src.arcosparse.logger import logger
-from src.arcosparse.models import (
+from arcosparse.logger import logger
+from arcosparse.models import (
     CHUNK_INDEX_INDICES,
     Asset,
     ChunksToDownload,
@@ -20,16 +20,32 @@ from src.arcosparse.models import (
 def select_best_asset_and_get_chunks(
     metadata: pystac.Item,
     request: UserRequest,
+    has_platform_ids_requested: bool,
+    platforms_metadata: Optional[dict] = None,
 ) -> tuple[dict[str, ChunksToDownload], str]:
     """
     Selects the best asset by comparing the number
     of chunks needed to download for each asset.
     Then returns the chunks to download and the url.
 
+    if the user wants to subset on platform ids, the platformChunked
+    asset is selected.
+
     Returns:
         tuple[dict[str, ChunksToDownload], str]: the chunks to download
         and the url
     """
+    if has_platform_ids_requested:
+        chunks_platform_chunked, platform_chunked_url, _ = (
+            _get_chunks_to_download(
+                metadata,
+                request,
+                "platformChunked",
+                platforms_metadata=platforms_metadata,
+            )
+        )
+        logger.info("Downloading using platform chunked")
+        return chunks_platform_chunked, platform_chunked_url
     chunks_time_chunked, time_chunked_url, number_chunks_time_chunked = (
         _get_chunks_to_download(metadata, request, "timeChunked")
     )
@@ -53,49 +69,80 @@ def _get_chunks_to_download(
     metadata: pystac.Item,
     request: UserRequest,
     asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
+    platforms_metadata: Optional[dict[str, str]] = None,
 ) -> tuple[dict[str, ChunksToDownload], str, int]:
     """
     Given the asset name, returns the chunks to download
     and the url, as well as the total number of chunks.
     """
-    asset = Asset.from_metadata_item(metadata, request.variables, asset_name)
+    asset = Asset.from_metadata_item(
+        metadata, request.variables, asset_name, platforms_metadata
+    )
     chunks_to_download_names: dict[str, ChunksToDownload] = {}
     total_number_of_chunks = 0
-    for variable in asset.variables:
-        output_coordinates = []
-        chunks_ranges: dict[str, tuple[int, int]] = {}
-        number_of_chunks = 1
-        for coordinate in variable.coordinates:
-            requested_subset: Optional[RequestedCoordinate] = getattr(
-                request, coordinate.coordinate_id, None
-            )
-            if requested_subset:
-                chunks_range = _get_chunk_indexes_for_coordinate(
-                    requested_subset.minimum,
-                    requested_subset.maximum,
-                    coordinate,
+    for platform_id in request.platform_ids or [None]:
+        number_of_chunks_per_variable = 0
+        for variable in asset.variables:
+            output_coordinates = []
+            chunks_ranges: dict[str, tuple[int, int]] = {}
+            number_of_chunks = 1
+            for coordinate in variable.coordinates:
+                requested_subset: Optional[RequestedCoordinate] = getattr(
+                    request, coordinate.coordinate_id, None
                 )
-            else:
-                chunks_range = _get_chunk_indexes_for_coordinate(
-                    None, None, coordinate
-                )
-            chunks_ranges[coordinate.coordinate_id] = chunks_range
-            number_of_chunks *= chunks_range[1] - chunks_range[0] + 1
-
-            if requested_subset:
-                output_coordinates.append(
-                    OutputCoordinate(
-                        minimum=requested_subset.minimum or coordinate.minimum,
-                        maximum=requested_subset.maximum or coordinate.maximum,
-                        coordinate_id=coordinate.coordinate_id,
+                if isinstance(coordinate.chunk_length, dict):
+                    if not platforms_metadata:
+                        raise ValueError(
+                            "Platforms metadata is needed when chunk "
+                            "length is a dict"
+                        )
+                    if not platform_id:
+                        raise ValueError(
+                            "Platform id is needed when chunk length is a dict"
+                        )
+                    chunk_length = coordinate.chunk_length.get(
+                        platforms_metadata[platform_id]
                     )
-                )
-        total_number_of_chunks += number_of_chunks
-        chunks_to_download_names[variable.variable_id] = ChunksToDownload(
-            variable_id=variable.variable_id,
-            chunks_names=_get_full_chunks_names(chunks_ranges),
-            output_coordinates=output_coordinates,
-        )
+                else:
+                    chunk_length = coordinate.chunk_length
+                if not chunk_length:
+                    chunks_range = (0, 0)
+                elif requested_subset and chunk_length:
+                    chunks_range = _get_chunk_indexes_for_coordinate(
+                        requested_minimum=requested_subset.minimum,
+                        requested_maximum=requested_subset.maximum,
+                        chunk_length=chunk_length,
+                        coordinate=coordinate,
+                    )
+                else:
+                    chunks_range = _get_chunk_indexes_for_coordinate(
+                        requested_minimum=None,
+                        requested_maximum=None,
+                        chunk_length=chunk_length,
+                        coordinate=coordinate,
+                    )
+                chunks_ranges[coordinate.coordinate_id] = chunks_range
+                number_of_chunks *= chunks_range[1] - chunks_range[0] + 1
+
+                if requested_subset:
+                    output_coordinates.append(
+                        OutputCoordinate(
+                            minimum=requested_subset.minimum
+                            or coordinate.minimum,
+                            maximum=requested_subset.maximum
+                            or coordinate.maximum,
+                            coordinate_id=coordinate.coordinate_id,
+                        )
+                    )
+            number_of_chunks_per_variable += number_of_chunks
+            chunks_to_download_names[variable.variable_id] = ChunksToDownload(
+                platform_id=platform_id,
+                variable_id=variable.variable_id,
+                chunks_names=_get_full_chunks_names(chunks_ranges),
+                output_coordinates=output_coordinates,
+            )
+        total_number_of_chunks += number_of_chunks_per_variable
+
     return chunks_to_download_names, asset.url, total_number_of_chunks
 
 
@@ -103,6 +150,7 @@ def _get_chunks_to_download(
 def _get_chunk_indexes_for_coordinate(
     requested_minimum: Optional[float],
     requested_maximum: Optional[float],
+    chunk_length: int,
     coordinate: Coordinate,
 ) -> tuple[int, int]:
     """
@@ -114,7 +162,7 @@ def _get_chunk_indexes_for_coordinate(
         requested_maximum = coordinate.maximum
     index_min = 0
     index_max = 0
-    if coordinate.chunk_length:
+    if chunk_length:
         logger.debug(
             f"Getting chunks indexes for coordinate"
             f"{coordinate.coordinate_id} of length "
@@ -125,25 +173,25 @@ def _get_chunk_indexes_for_coordinate(
             index_min = _get_chunks_index_arithmetic(
                 requested_minimum,
                 coordinate.chunk_reference_coordinate,
-                coordinate.chunk_length,
+                chunk_length,
             )
             index_max = _get_chunks_index_arithmetic(
                 requested_maximum,
                 coordinate.chunk_reference_coordinate,
-                coordinate.chunk_length,
+                chunk_length,
             )
         elif coordinate.chunk_type == ChunkType.GEOMETRIC:
             logger.debug("Geometric chunking")
             index_min = _get_chunks_index_geometric(
                 requested_minimum,
                 coordinate.chunk_reference_coordinate,
-                coordinate.chunk_length,
+                chunk_length,
                 coordinate.chunk_geometric_factor,
             )
             index_max = _get_chunks_index_geometric(
                 requested_maximum,
                 coordinate.chunk_reference_coordinate,
-                coordinate.chunk_length,
+                chunk_length,
                 coordinate.chunk_geometric_factor,
             )
     return (index_min, index_max)

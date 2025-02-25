@@ -6,30 +6,34 @@ from typing import Optional
 # check if we could use polars instead of pandas
 import pandas as pd
 
-from src.arcosparse.logger import logger
-from src.arcosparse.models import OutputCoordinate, UserConfiguration
-from src.arcosparse.sessions import ConfiguredRequestsSession
+from arcosparse.logger import logger
+from arcosparse.models import OutputCoordinate, UserConfiguration
+from arcosparse.sessions import ConfiguredRequestsSession
 
 
 def download_and_convert_to_pandas(
     base_url: str,
     variable_id: str,
     chunk_name: str,
+    platform_id: Optional[str],
     output_coordinates: list[OutputCoordinate],
     user_configuration: UserConfiguration,
 ) -> Optional[pd.DataFrame]:
-    logger.debug(f"downloading {base_url}/{variable_id}/{chunk_name}.sqlite")
-    # TODO: create a proper request with headers retries etc
-    # see the toolbox for examples (sessions.py)
+    if platform_id:
+        url_to_download = (
+            f"{base_url}/{platform_id}/{variable_id}/{chunk_name}.sqlite"
+        )
+    else:
+        url_to_download = f"{base_url}/{variable_id}/{chunk_name}.sqlite"
+    logger.debug(f"downloading {url_to_download}")
+    # TODO: check if we'd better use boto3 instead of requests
     with ConfiguredRequestsSession(
         user_configuration.disable_ssl,
         user_configuration.trust_env,
         user_configuration.ssl_certificate_path,
         user_configuration.extra_params,
     ) as session:
-        response = session.get(
-            f"{base_url}/{variable_id}/{chunk_name}.sqlite",
-        )
+        response = session.get(url_to_download)
         # means that the chunk does not exist
         if response.status_code == 403:
             logger.debug(f"Chunk {chunk_name} does not exist")

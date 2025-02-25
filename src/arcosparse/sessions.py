@@ -6,7 +6,7 @@ import requests
 import requests.auth
 from requests.adapters import HTTPAdapter, Retry
 
-from src.arcosparse.environment_variables import PROXY_HTTP, PROXY_HTTPS
+from arcosparse.environment_variables import PROXY_HTTP, PROXY_HTTPS
 
 logger = logging.getLogger("copernicusmarine")
 
