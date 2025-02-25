@@ -1,11 +1,11 @@
 import logging
 
-from src.arcosparse.models import (
+from arcosparse.models import (
     RequestedCoordinate,
     UserConfiguration,
     UserRequest,
 )
-from src.arcosparse.subset import subset
+from arcosparse.subset import subset
 
 logging.getLogger("arcosparse").setLevel(logging.DEBUG)
 
@@ -14,7 +14,7 @@ if __name__ == "__main__":
     user_configuration = UserConfiguration()
     request = UserRequest(
         time=RequestedCoordinate(
-            minimum=1731888000, maximum=1734516000, coodinate_id="time"
+            minimum=1700888000, maximum=1701516000, coodinate_id="time"
         ),
         latitude=RequestedCoordinate(
             minimum=-63.900001525878906, maximum=90.0, coodinate_id="latitude"
@@ -30,8 +30,9 @@ if __name__ == "__main__":
         elevation=RequestedCoordinate(
             maximum=120, minimum=-10, coodinate_id="elevation"
         ),
-        variables=["ATMP", "CDOM"],
-        platform_ids=[],
+        variables=["ATMP", "PSAL"],
+        platform_ids=["F-Vartdalsfjorden___MO"],  # [10405 rows x 10 columns]
+        # platform_ids=[], # [100938 rows x 10 columns]
     )
     url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--history/dataset.stac.json"  # noqa
 
