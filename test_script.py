@@ -11,7 +11,13 @@ logging.getLogger("arcosparse").setLevel(logging.DEBUG)
 
 if __name__ == "__main__":
     url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked"  # noqa
-    user_configuration = UserConfiguration()
+    user_configuration = UserConfiguration(
+        extra_params={
+            "x-cop-client": "copernicus-marine-toolbox",
+            "x-cop-client-version": "1.3.4",
+            "x-cop-user": "rjester",
+        }
+    )
     request = UserRequest(
         time=RequestedCoordinate(
             minimum=1700888000, maximum=1701516000, coodinate_id="time"
