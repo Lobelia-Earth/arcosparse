@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 
 from arcosparse.models import (
     RequestedCoordinate,
@@ -49,5 +50,11 @@ if __name__ == "__main__":
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite
     # 2024-12-16 08:58:00     258048 15.0.0.0.sqlite
     # 2024-12-18 19:49:59      77824 16.0.0.0.sqlite
-    pandas = subset(request, user_configuration, url_metadata)
+    pandas = subset(
+        request,
+        user_configuration,
+        url_metadata,
+        output_directory=Path("todelete"),
+        # output_directory=None,
+    )
     print(pandas)
