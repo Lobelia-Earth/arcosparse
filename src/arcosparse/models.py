@@ -190,7 +190,7 @@ CHUNK_INDEX_INDICES = {
 class RequestedCoordinate:
     minimum: Optional[float]
     maximum: Optional[float]
-    coodinate_id: str
+    coordinate_id: str
 
 
 @dataclass
