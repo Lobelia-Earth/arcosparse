@@ -13,6 +13,7 @@ requests = "^2.32.3"
 pandas = "^2.2.3"
 pystac = ">=1.8.3"
 pyarrow = "^19.0.1"
+tqdm = "^4.67.1"
 
 
 [tool.poetry.group.dev.dependencies]

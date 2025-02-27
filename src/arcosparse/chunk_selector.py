@@ -8,7 +8,7 @@ from arcosparse.logger import logger
 from arcosparse.models import (
     CHUNK_INDEX_INDICES,
     Asset,
-    ChunksToDownload,
+    ChunksRanges,
     ChunkType,
     Coordinate,
     OutputCoordinate,
@@ -22,7 +22,7 @@ def select_best_asset_and_get_chunks(
     request: UserRequest,
     has_platform_ids_requested: bool,
     platforms_metadata: Optional[dict] = None,
-) -> tuple[list[ChunksToDownload], str]:
+) -> tuple[list[ChunksRanges], str]:
     """
     Selects the best asset by comparing the number
     of chunks needed to download for each asset.
@@ -70,7 +70,7 @@ def _get_chunks_to_download(
     request: UserRequest,
     asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
     platforms_metadata: Optional[dict[str, str]] = None,
-) -> tuple[list[ChunksToDownload], str, int]:
+) -> tuple[list[ChunksRanges], str, int]:
     """
     Given the asset name, returns the chunks to download
     and the url, as well as the total number of chunks.
@@ -78,7 +78,7 @@ def _get_chunks_to_download(
     asset = Asset.from_metadata_item(
         metadata, request.variables, asset_name, platforms_metadata
     )
-    chunks_to_download_names: list[ChunksToDownload] = []
+    chunks_to_download: list[ChunksRanges] = []
     total_number_of_chunks = 0
     for platform_id in request.platform_ids or [None]:
         number_of_chunks_per_variable = 0
@@ -105,25 +105,24 @@ def _get_chunks_to_download(
                     )
                 else:
                     chunk_length = coordinate.chunk_length
-                if not chunk_length:
-                    chunks_range = (0, 0)
-                elif requested_subset and chunk_length:
+                if requested_subset and chunk_length:
                     chunks_range = _get_chunk_indexes_for_coordinate(
                         requested_minimum=requested_subset.minimum,
                         requested_maximum=requested_subset.maximum,
                         chunk_length=chunk_length,
                         coordinate=coordinate,
                     )
-                else:
+                elif chunk_length:
                     chunks_range = _get_chunk_indexes_for_coordinate(
                         requested_minimum=None,
                         requested_maximum=None,
                         chunk_length=chunk_length,
                         coordinate=coordinate,
                     )
+                else:
+                    chunks_range = (0, 0)
                 chunks_ranges[coordinate.coordinate_id] = chunks_range
                 number_of_chunks *= chunks_range[1] - chunks_range[0] + 1
-
                 if requested_subset:
                     output_coordinates.append(
                         OutputCoordinate(
@@ -134,18 +133,21 @@ def _get_chunks_to_download(
                             coordinate_id=coordinate.coordinate_id,
                         )
                     )
-            number_of_chunks_per_variable += number_of_chunks
-            chunks_to_download_names.append(
-                ChunksToDownload(
+            chunks_to_download.append(
+                ChunksRanges(
                     platform_id=platform_id,
                     variable_id=variable.variable_id,
-                    chunks_names=_get_full_chunks_names(chunks_ranges),
+                    chunks_ranges=chunks_ranges,
                     output_coordinates=output_coordinates,
                 )
             )
-        total_number_of_chunks += number_of_chunks_per_variable
+            logger.debug(
+                "Number of chunks after variable "
+                f"{variable.variable_id}: {number_of_chunks_per_variable}"
+            )
+            total_number_of_chunks += number_of_chunks
 
-    return chunks_to_download_names, asset.url, total_number_of_chunks
+    return chunks_to_download, asset.url, total_number_of_chunks
 
 
 # TODO: creates specific tests for this function
@@ -238,7 +240,7 @@ def _get_chunks_index_geometric(
 
 
 # TODO: unit test for this
-def _get_full_chunks_names(
+def get_full_chunks_names(
     chunks_indexes: dict[str, tuple[int, int]],
 ) -> set[str]:
     """
