@@ -18,6 +18,7 @@ def _subset(
     user_configuration: UserConfiguration,
     url_metadata: str,
     output_directory: Optional[Path],
+    disable_progress_bar: bool,
 ) -> Optional[pd.DataFrame]:
     metadata = _get_stac_metadata(url_metadata, user_configuration)
     has_platform_ids_requested = bool(request.platform_ids)
@@ -71,6 +72,10 @@ def _subset(
             download_and_convert_to_pandas,
             tasks,
             max_concurrent_requests=8,
+            tdqm_bar_configuration={
+                "disable": disable_progress_bar,
+                "desc": "Downloading chunks",
+            },
         )
         if result is not None
     ]
@@ -86,6 +91,7 @@ def subset_and_save(
     user_configuration: UserConfiguration,
     url_metadata: str,
     output_directory: Path,
+    disable_progress_bar: bool = False,
 ) -> None:
     """
     To open the result in pandas:
@@ -115,15 +121,28 @@ def subset_and_save(
     Need to have the pyarrow library as a dependency
     """
     output_directory.mkdir(parents=True, exist_ok=True)
-    _subset(request, user_configuration, url_metadata, output_directory)
+    _subset(
+        request,
+        user_configuration,
+        url_metadata,
+        output_directory,
+        disable_progress_bar,
+    )
 
 
 def open_dataset(
     request: UserRequest,
     user_configuration: UserConfiguration,
     url_metadata: str,
+    disable_progress_bar: bool = False,
 ) -> pd.DataFrame:
-    df = _subset(request, user_configuration, url_metadata, None)
+    df = _subset(
+        request,
+        user_configuration,
+        url_metadata,
+        None,
+        disable_progress_bar,
+    )
     if df is None:
         return pd.DataFrame()
     return df

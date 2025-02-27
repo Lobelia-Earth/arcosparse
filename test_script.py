@@ -56,5 +56,6 @@ if __name__ == "__main__":
         url_metadata,
         output_directory=Path("todelete"),
         # output_directory=None,
+        disable_progress_bar=False,
     )
     print(pandas)
