@@ -74,36 +74,3 @@ def download_and_convert_to_pandas(
                     df.to_parquet(output_path)
                     return None
         return df
-
-
-if __name__ == "__main__":
-    import requests
-
-    url_file = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-057/arco/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/timeChunked/WDIR/34.0.0.0.sqlite"  # noqa
-    response = requests.get(url_file, timeout=600)
-    response.raise_for_status()
-    # db_path = "your_database.sqlite"
-    # with open(db_path, "wb") as f:
-    #     f.write(response.content)
-    # connection = sqlite3.connect(db_path)
-
-    with tempfile.NamedTemporaryFile(
-        suffix=".sqlite", delete=True
-    ) as temp_file:
-        # Write the downloaded content to the temporary file
-        temp_file.write(response.content)
-        temp_file.flush()  # Ensure all data is written to the file
-        print(f"Database file downloaded to temporary file: {temp_file.name}")
-        with sqlite3.connect(temp_file.name) as connection:
-            connection = sqlite3.connect(temp_file.name)
-            # Show column names
-            cursor = connection.cursor()
-            cursor.execute("PRAGMA table_info(data)")
-            print(cursor.fetchall())
-
-            # Read data from a specific table
-            df = pd.read_sql(
-                "SELECT * FROM data WHERE time < 1732060800", connection
-            )
-
-            print(df)
