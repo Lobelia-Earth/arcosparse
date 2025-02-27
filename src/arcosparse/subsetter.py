@@ -4,13 +4,18 @@ from typing import Optional
 import pandas as pd
 import pystac
 
-from arcosparse.chunk_selector import select_best_asset_and_get_chunks
+from arcosparse.chunk_selector import (
+    get_full_chunks_names,
+    select_best_asset_and_get_chunks,
+)
 from arcosparse.downloader import download_and_convert_to_pandas
+from arcosparse.logger import logger
 from arcosparse.models import UserConfiguration, UserRequest
 from arcosparse.sessions import ConfiguredRequestsSession
 from arcosparse.utils import run_concurrently
 
-MAX_CONCURRENT_REQUESTS = 10
+# quite high because a lot of 403
+MAX_CONCURRENT_REQUESTS = 50
 
 
 def _subset(
@@ -38,43 +43,53 @@ def _subset(
                 raise ValueError(
                     f"Platform {platform_id} is not available in the dataset."
                 )
+    logger.info("Selecting the best asset and chunks to download")
     chunks_to_download, asset_url = select_best_asset_and_get_chunks(
         metadata, request, has_platform_ids_requested, platforms_metadata
     )
     tasks = []
     output_filepath = None
-    for chunks in chunks_to_download:
-        for chunk in chunks.chunks_names:
+    for chunks_range in chunks_to_download:
+        logger.debug(f"Downloading chunks for {chunks_range.variable_id}")
+        # TODO: Maybe we should do this calculation per batches
+        # it would allow for huge downloads and create bigger parquet files?
+        for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges):
             if output_directory:
                 output_directory.mkdir(parents=True, exist_ok=True)
-                if chunks.platform_id:
+                if chunks_range.platform_id:
+                    # TODO: maybe need a way to no overwrite the files
+                    # also a skip existing option? maybe not
                     output_filename = (
-                        f"{chunks.platform_id}_{chunks.variable_id}_{chunk}"
+                        f"{chunks_range.platform_id}_"
+                        f"{chunks_range.variable_id}_{chunk_name}"
                         f".parquet"
                     )
                 else:
-                    output_filename = f"{chunks.variable_id}_{chunk}.parquet"
+                    output_filename = (
+                        f"{chunks_range.variable_id}_{chunk_name}.parquet"
+                    )
                 output_filepath = output_directory / output_filename
             tasks.append(
                 (
                     asset_url,
-                    chunks.variable_id,
-                    chunk,
-                    chunks.platform_id,
-                    chunks.output_coordinates,
+                    chunks_range.variable_id,
+                    chunk_name,
+                    chunks_range.platform_id,
+                    chunks_range.output_coordinates,
                     user_configuration,
                     output_filepath,
                 )
             )
+    logger.info("Downloading and converting to pandas-like dataframes")
     results = [
         result
         for result in run_concurrently(
             download_and_convert_to_pandas,
             tasks,
-            max_concurrent_requests=8,
+            max_concurrent_requests=MAX_CONCURRENT_REQUESTS,
             tdqm_bar_configuration={
                 "disable": disable_progress_bar,
-                "desc": "Downloading chunks",
+                "desc": "Downloading files",
             },
         )
         if result is not None
