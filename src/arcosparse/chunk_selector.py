@@ -22,7 +22,7 @@ def select_best_asset_and_get_chunks(
     request: UserRequest,
     has_platform_ids_requested: bool,
     platforms_metadata: Optional[dict] = None,
-) -> tuple[dict[str, ChunksToDownload], str]:
+) -> tuple[list[ChunksToDownload], str]:
     """
     Selects the best asset by comparing the number
     of chunks needed to download for each asset.
@@ -70,7 +70,7 @@ def _get_chunks_to_download(
     request: UserRequest,
     asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
     platforms_metadata: Optional[dict[str, str]] = None,
-) -> tuple[dict[str, ChunksToDownload], str, int]:
+) -> tuple[list[ChunksToDownload], str, int]:
     """
     Given the asset name, returns the chunks to download
     and the url, as well as the total number of chunks.
@@ -78,7 +78,7 @@ def _get_chunks_to_download(
     asset = Asset.from_metadata_item(
         metadata, request.variables, asset_name, platforms_metadata
     )
-    chunks_to_download_names: dict[str, ChunksToDownload] = {}
+    chunks_to_download_names: list[ChunksToDownload] = []
     total_number_of_chunks = 0
     for platform_id in request.platform_ids or [None]:
         number_of_chunks_per_variable = 0
@@ -135,11 +135,13 @@ def _get_chunks_to_download(
                         )
                     )
             number_of_chunks_per_variable += number_of_chunks
-            chunks_to_download_names[variable.variable_id] = ChunksToDownload(
-                platform_id=platform_id,
-                variable_id=variable.variable_id,
-                chunks_names=_get_full_chunks_names(chunks_ranges),
-                output_coordinates=output_coordinates,
+            chunks_to_download_names.append(
+                ChunksToDownload(
+                    platform_id=platform_id,
+                    variable_id=variable.variable_id,
+                    chunks_names=_get_full_chunks_names(chunks_ranges),
+                    output_coordinates=output_coordinates,
+                )
             )
         total_number_of_chunks += number_of_chunks_per_variable
 
