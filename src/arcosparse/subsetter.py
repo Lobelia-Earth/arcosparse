@@ -49,30 +49,32 @@ def _subset(
     )
     tasks = []
     output_filepath = None
-    for chunks in chunks_to_download:
-        logger.debug(f"Downloading chunks for {chunks.variable_id}")
+    for chunks_range in chunks_to_download:
+        logger.debug(f"Downloading chunks for {chunks_range.variable_id}")
         # TODO: Maybe we should do this calculation per batches
         # it would allow for huge downloads and create bigger parquet files?
-        for chunk in get_full_chunks_names(chunks.chunks_ranges):
+        for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges):
             if output_directory:
                 output_directory.mkdir(parents=True, exist_ok=True)
-                if chunks.platform_id:
+                if chunks_range.platform_id:
                     # TODO: maybe need a way to no overwrite the files
                     # also a skip existing option? maybe not
                     output_filename = (
-                        f"{chunks.platform_id}_{chunks.variable_id}_{chunk}"
+                        f"{chunks_range.platform_id}_{chunks_range.variable_id}_{chunk_name}"
                         f".parquet"
                     )
                 else:
-                    output_filename = f"{chunks.variable_id}_{chunk}.parquet"
+                    output_filename = (
+                        f"{chunks_range.variable_id}_{chunk_name}.parquet"
+                    )
                 output_filepath = output_directory / output_filename
             tasks.append(
                 (
                     asset_url,
-                    chunks.variable_id,
-                    chunk,
-                    chunks.platform_id,
-                    chunks.output_coordinates,
+                    chunks_range.variable_id,
+                    chunk_name,
+                    chunks_range.platform_id,
+                    chunks_range.output_coordinates,
                     user_configuration,
                     output_filepath,
                 )
