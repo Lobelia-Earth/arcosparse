@@ -60,7 +60,8 @@ def _subset(
                     # TODO: maybe need a way to no overwrite the files
                     # also a skip existing option? maybe not
                     output_filename = (
-                        f"{chunks_range.platform_id}_{chunks_range.variable_id}_{chunk_name}"
+                        f"{chunks_range.platform_id}_"
+                        f"{chunks_range.variable_id}_{chunk_name}"
                         f".parquet"
                     )
                 else:
