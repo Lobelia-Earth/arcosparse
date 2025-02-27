@@ -37,12 +37,12 @@ def subset(
         metadata, request, has_platform_ids_requested, platforms_metadata
     )
     tasks = []
-    for variable_id, chunks in chunks_to_download.items():
+    for chunks in chunks_to_download:
         for chunk in chunks.chunks_names:
             tasks.append(
                 (
                     asset_url,
-                    variable_id,
+                    chunks.variable_id,
                     chunk,
                     chunks.platform_id,
                     chunks.output_coordinates,

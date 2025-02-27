@@ -5,7 +5,7 @@ from arcosparse.models import (
     UserConfiguration,
     UserRequest,
 )
-from arcosparse.subset import subset
+from arcosparse.subsetter import subset
 
 logging.getLogger("arcosparse").setLevel(logging.DEBUG)
 
@@ -37,7 +37,10 @@ if __name__ == "__main__":
             maximum=120, minimum=-10, coodinate_id="elevation"
         ),
         variables=["ATMP", "PSAL"],
-        platform_ids=["F-Vartdalsfjorden___MO"],  # [10405 rows x 10 columns]
+        platform_ids=[
+            "F-Vartdalsfjorden___MO",
+            "B-Sulafjorden___MO",
+        ],  # [20726 rows x 10 columns]
         # platform_ids=[], # [100938 rows x 10 columns]
     )
     url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--history/dataset.stac.json"  # noqa

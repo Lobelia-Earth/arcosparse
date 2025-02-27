@@ -1,7 +1,7 @@
 import pystac
 
 from arcosparse.models import RequestedCoordinate, UserRequest
-from arcosparse.subset import select_best_asset_and_get_chunks
+from arcosparse.subsetter import select_best_asset_and_get_chunks
 
 url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--latest/dataset.stac.json"  # noqa
 
