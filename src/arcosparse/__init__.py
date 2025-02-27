@@ -1,3 +1,6 @@
-from arcosparse.subsetter import subset
+from arcosparse.subsetter import open_dataset, subset_and_save
 
-__all__ = ["subset"]
+__all__ = [
+    "open_dataset",
+    "subset_and_save",
+]

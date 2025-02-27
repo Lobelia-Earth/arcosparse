@@ -13,7 +13,7 @@ from arcosparse.utils import run_concurrently
 MAX_CONCURRENT_REQUESTS = 10
 
 
-def subset(
+def _subset(
     request: UserRequest,
     user_configuration: UserConfiguration,
     url_metadata: str,
@@ -78,7 +78,7 @@ def subset(
         return None
     if not results:
         return pd.DataFrame()
-    return pd.concat([result for result in results if result is not None])
+    return pd.concat(results)
 
 
 def subset_and_save(
@@ -115,15 +115,18 @@ def subset_and_save(
     Need to have the pyarrow library as a dependency
     """
     output_directory.mkdir(parents=True, exist_ok=True)
-    subset(request, user_configuration, url_metadata, output_directory)
+    _subset(request, user_configuration, url_metadata, output_directory)
 
 
 def open_dataset(
     request: UserRequest,
     user_configuration: UserConfiguration,
     url_metadata: str,
-) -> Optional[pd.DataFrame]:
-    subset(request, user_configuration, url_metadata, None)
+) -> pd.DataFrame:
+    df = _subset(request, user_configuration, url_metadata, None)
+    if df is None:
+        return pd.DataFrame()
+    return df
 
 
 def _get_stac_metadata(
