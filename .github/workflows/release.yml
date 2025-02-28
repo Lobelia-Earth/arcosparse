@@ -9,8 +9,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_BOT_RW_TOKEN }}
+        # with:
+        #   token: ${{ secrets.GH_BOT_RW_TOKEN }}
 
       - name: Install dependencies
         run: make install
@@ -27,5 +27,5 @@ jobs:
           git tag v${{ steps.set-version.outputs.VERSION }}
           git push origin --tags
 
-      - name: Create Github release
-        run: gh release create v${{ steps.set-version.outputs.VERSION }} --generate-notes
+      # - name: Create Github release
+      #   run: gh release create v${{ steps.set-version.outputs.VERSION }} --generate-notes
