@@ -1,4 +1,6 @@
-from arcosparse import subset
+from copy import deepcopy
+
+from arcosparse import open_dataset, subset_and_save
 from arcosparse.models import (
     RequestedCoordinate,
     UserConfiguration,
@@ -15,21 +17,21 @@ USER_CONFIGURATION = UserConfiguration(
 )
 REQUEST = UserRequest(
     time=RequestedCoordinate(
-        minimum=1700888000, maximum=1701516000, coodinate_id="time"
+        minimum=1700888000, maximum=1701516000, coordinate_id="time"
     ),
     latitude=RequestedCoordinate(
-        minimum=-63.900001525878906, maximum=90.0, coodinate_id="latitude"
+        minimum=-63.900001525878906, maximum=90.0, coordinate_id="latitude"
     ),
     longitude=RequestedCoordinate(
         minimum=-146.99937438964844,
         maximum=179.99998474121094,
-        coodinate_id="longitude",
+        coordinate_id="longitude",
     ),
     # TODO: handle the elevation and depth problem if needed
     # TODO: fix the problem with the elevation,
     # cannot request the min and max two many chunks to create
     elevation=RequestedCoordinate(
-        maximum=120, minimum=-10, coodinate_id="elevation"
+        maximum=120, minimum=-10, coordinate_id="elevation"
     ),
     variables=["ATMP", "PSAL"],
     platform_ids=[
@@ -38,10 +40,36 @@ REQUEST = UserRequest(
     ],
 )
 
+REQUEST_WITH_WRONG_IDS = deepcopy(REQUEST)
+REQUEST_WITH_WRONG_IDS.platform_ids = ["wrong_id"]
+
 
 class TestPlatformSubsetting:
     def test_platform_subsetting(self):
-        df = subset(REQUEST, USER_CONFIGURATION, URL_METADATA)
+        df = open_dataset(REQUEST, USER_CONFIGURATION, URL_METADATA)
         values = df["platform_id"].values
         for platform_id in REQUEST.platform_ids:
             assert platform_id in values
+
+    def test_platform_subsetting_save_locally(self, tmp_path):
+        subset_and_save(REQUEST, USER_CONFIGURATION, URL_METADATA, tmp_path)
+        expected_files = [
+            "B-Sulafjorden___MO_PSAL_6672.0.0.0.parquet",
+            "B-Sulafjorden___MO_PSAL_6673.0.0.0.parquet",
+            "F-Vartdalsfjorden___MO_PSAL_6672.0.0.0.parquet",
+            "F-Vartdalsfjorden___MO_PSAL_6673.0.0.0.parquet",
+        ]
+        for file in expected_files:
+            assert (tmp_path / file).exists()
+
+    def test_wrong_platform_ids(self):
+        try:
+            _ = open_dataset(
+                REQUEST_WITH_WRONG_IDS, USER_CONFIGURATION, URL_METADATA
+            )
+            assert False
+        except ValueError as e:
+            assert (
+                f"Platform {REQUEST_WITH_WRONG_IDS.platform_ids[0]} is not available in the dataset."
+                in str(e)
+            )

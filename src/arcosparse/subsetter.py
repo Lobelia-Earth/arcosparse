@@ -1,20 +1,30 @@
+from pathlib import Path
+from typing import Optional
+
 import pandas as pd
 import pystac
 
-from arcosparse.chunk_selector import select_best_asset_and_get_chunks
+from arcosparse.chunk_selector import (
+    get_full_chunks_names,
+    select_best_asset_and_get_chunks,
+)
 from arcosparse.downloader import download_and_convert_to_pandas
+from arcosparse.logger import logger
 from arcosparse.models import UserConfiguration, UserRequest
 from arcosparse.sessions import ConfiguredRequestsSession
 from arcosparse.utils import run_concurrently
 
-MAX_CONCURRENT_REQUESTS = 10
+# quite high because a lot of 403
+MAX_CONCURRENT_REQUESTS = 50
 
 
-def subset(
+def _subset(
     request: UserRequest,
     user_configuration: UserConfiguration,
     url_metadata: str,
-) -> pd.DataFrame:
+    output_path: Optional[Path],
+    disable_progress_bar: bool,
+) -> Optional[pd.DataFrame]:
     metadata = _get_stac_metadata(url_metadata, user_configuration)
     has_platform_ids_requested = bool(request.platform_ids)
     platforms_metadata = None
@@ -33,34 +43,123 @@ def subset(
                 raise ValueError(
                     f"Platform {platform_id} is not available in the dataset."
                 )
+    logger.info("Selecting the best asset and chunks to download")
     chunks_to_download, asset_url = select_best_asset_and_get_chunks(
         metadata, request, has_platform_ids_requested, platforms_metadata
     )
     tasks = []
-    for chunks in chunks_to_download:
-        for chunk in chunks.chunks_names:
+    output_filepath = None
+    for chunks_range in chunks_to_download:
+        logger.debug(f"Downloading chunks for {chunks_range.variable_id}")
+        # TODO: Maybe we should do this calculation per batches
+        # it would allow for huge downloads and create bigger parquet files?
+        for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges):
+            if output_path:
+                if chunks_range.platform_id:
+                    # TODO: maybe need a way to no overwrite the files
+                    # also a skip existing option? maybe not
+                    output_filename = (
+                        f"{chunks_range.platform_id}_"
+                        f"{chunks_range.variable_id}_{chunk_name}"
+                        f".parquet"
+                    )
+                else:
+                    output_filename = (
+                        f"{chunks_range.variable_id}_{chunk_name}.parquet"
+                    )
+                output_filepath = output_path / output_filename
             tasks.append(
                 (
                     asset_url,
-                    chunks.variable_id,
-                    chunk,
-                    chunks.platform_id,
-                    chunks.output_coordinates,
+                    chunks_range.variable_id,
+                    chunk_name,
+                    chunks_range.platform_id,
+                    chunks_range.output_coordinates,
                     user_configuration,
+                    output_filepath,
                 )
             )
+    logger.info("Downloading and converting to pandas-like dataframes")
     results = [
         result
         for result in run_concurrently(
             download_and_convert_to_pandas,
             tasks,
-            max_concurrent_requests=8,
+            max_concurrent_requests=MAX_CONCURRENT_REQUESTS,
+            tdqm_bar_configuration={
+                "disable": disable_progress_bar,
+                "desc": "Downloading files",
+            },
         )
         if result is not None
     ]
+    if output_path:
+        return None
     if not results:
         return pd.DataFrame()
-    return pd.concat([result for result in results if result is not None])
+    return pd.concat(results)
+
+
+def subset_and_save(
+    request: UserRequest,
+    user_configuration: UserConfiguration,
+    url_metadata: str,
+    output_path: Path,
+    disable_progress_bar: bool = False,
+) -> None:
+    """
+    To open the result in pandas:
+
+    ```python
+    import pandas as pd
+
+    import glob
+
+    # Get all partitioned Parquet files
+    parquet_files = glob.glob(f"{output_dir}/*.parquet")
+
+    # Read all files into a single dataframe
+    df = pd.concat(pd.read_parquet(file) for file in parquet_files)
+
+    print(df)
+
+    Or with dask:
+
+    ```python
+
+    import dask.dataframe as dd
+
+    df = dd.read_parquet(output_dir, engine="pyarrow")
+    print(df.head())  # Works just like pandas but with lazy loading
+
+    Need to have the pyarrow library as a dependency
+    """
+    output_path.mkdir(parents=True, exist_ok=True)
+    _subset(
+        request,
+        user_configuration,
+        url_metadata,
+        output_path,
+        disable_progress_bar,
+    )
+
+
+def open_dataset(
+    request: UserRequest,
+    user_configuration: UserConfiguration,
+    url_metadata: str,
+    disable_progress_bar: bool = False,
+) -> pd.DataFrame:
+    df = _subset(
+        request,
+        user_configuration,
+        url_metadata,
+        None,
+        disable_progress_bar,
+    )
+    if df is None:
+        return pd.DataFrame()
+    return df
 
 
 def _get_stac_metadata(

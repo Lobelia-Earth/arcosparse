@@ -1,11 +1,12 @@
 import logging
+from pathlib import Path
 
 from arcosparse.models import (
     RequestedCoordinate,
     UserConfiguration,
     UserRequest,
 )
-from arcosparse.subsetter import subset
+from arcosparse.subsetter import _subset
 
 logging.getLogger("arcosparse").setLevel(logging.DEBUG)
 
@@ -20,21 +21,21 @@ if __name__ == "__main__":
     )
     request = UserRequest(
         time=RequestedCoordinate(
-            minimum=1700888000, maximum=1701516000, coodinate_id="time"
+            minimum=1700888000, maximum=1701516000, coordinate_id="time"
         ),
         latitude=RequestedCoordinate(
-            minimum=-63.900001525878906, maximum=90.0, coodinate_id="latitude"
+            minimum=-63.900001525878906, maximum=90.0, coordinate_id="latitude"
         ),
         longitude=RequestedCoordinate(
             minimum=-146.99937438964844,
             maximum=179.99998474121094,
-            coodinate_id="longitude",
+            coordinate_id="longitude",
         ),
         # TODO: handle the elevation and depth problem if needed
         # TODO: fix the problem with the elevation,
         # cannot request the min and max two many chunks to create
         elevation=RequestedCoordinate(
-            maximum=120, minimum=-10, coodinate_id="elevation"
+            maximum=120, minimum=-10, coordinate_id="elevation"
         ),
         variables=["ATMP", "PSAL"],
         platform_ids=[
@@ -49,5 +50,12 @@ if __name__ == "__main__":
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite
     # 2024-12-16 08:58:00     258048 15.0.0.0.sqlite
     # 2024-12-18 19:49:59      77824 16.0.0.0.sqlite
-    pandas = subset(request, user_configuration, url_metadata)
+    pandas = _subset(
+        request,
+        user_configuration,
+        url_metadata,
+        output_directory=Path("todelete"),
+        # output_directory=None,
+        disable_progress_bar=False,
+    )
     print(pandas)

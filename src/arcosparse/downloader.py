@@ -1,5 +1,6 @@
 import sqlite3
 import tempfile
+from pathlib import Path
 from typing import Optional
 
 # TODO: if we have performances issues
@@ -18,6 +19,7 @@ def download_and_convert_to_pandas(
     platform_id: Optional[str],
     output_coordinates: list[OutputCoordinate],
     user_configuration: UserConfiguration,
+    output_path: Optional[Path],
 ) -> Optional[pd.DataFrame]:
     if platform_id:
         url_to_download = (
@@ -66,7 +68,11 @@ def download_and_convert_to_pandas(
             temp_file.flush()
             with sqlite3.connect(temp_file.name) as connection:
                 df = pd.read_sql(query, connection)
-        logger.debug("Done downloading")
+                if df.empty:
+                    return None
+                if output_path:
+                    df.to_parquet(output_path)
+                    return None
         return df
 
 

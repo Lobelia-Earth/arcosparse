@@ -190,7 +190,7 @@ CHUNK_INDEX_INDICES = {
 class RequestedCoordinate:
     minimum: Optional[float]
     maximum: Optional[float]
-    coodinate_id: str
+    coordinate_id: str
 
 
 @dataclass
@@ -225,13 +225,22 @@ class OutputCoordinate:
 
 
 @dataclass
-class ChunksToDownload:
+class ChunksRanges:
     """
     This class is used to store the chunking information
     for the subset we want to download.
+
+    chunk range looks like:
+    {
+        "time": (0, 5),
+        "latitude": (0, 5),
+        "longitude": (0, 5),
+        "elevation": (0, 5),
+    }
+    Used as the input of the function to create the names of the chunks
     """
 
     platform_id: Optional[str]
     variable_id: str
-    chunks_names: set[str]
+    chunks_ranges: dict[str, tuple[int, int]]
     output_coordinates: list[OutputCoordinate]
