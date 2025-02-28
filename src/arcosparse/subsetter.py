@@ -22,7 +22,7 @@ def _subset(
     request: UserRequest,
     user_configuration: UserConfiguration,
     url_metadata: str,
-    output_directory: Optional[Path],
+    output_path: Optional[Path],
     disable_progress_bar: bool,
 ) -> Optional[pd.DataFrame]:
     metadata = _get_stac_metadata(url_metadata, user_configuration)
@@ -54,8 +54,7 @@ def _subset(
         # TODO: Maybe we should do this calculation per batches
         # it would allow for huge downloads and create bigger parquet files?
         for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges):
-            if output_directory:
-                output_directory.mkdir(parents=True, exist_ok=True)
+            if output_path:
                 if chunks_range.platform_id:
                     # TODO: maybe need a way to no overwrite the files
                     # also a skip existing option? maybe not
@@ -68,7 +67,7 @@ def _subset(
                     output_filename = (
                         f"{chunks_range.variable_id}_{chunk_name}.parquet"
                     )
-                output_filepath = output_directory / output_filename
+                output_filepath = output_path / output_filename
             tasks.append(
                 (
                     asset_url,
@@ -94,7 +93,7 @@ def _subset(
         )
         if result is not None
     ]
-    if output_directory:
+    if output_path:
         return None
     if not results:
         return pd.DataFrame()
@@ -105,7 +104,7 @@ def subset_and_save(
     request: UserRequest,
     user_configuration: UserConfiguration,
     url_metadata: str,
-    output_directory: Path,
+    output_path: Path,
     disable_progress_bar: bool = False,
 ) -> None:
     """
@@ -135,12 +134,12 @@ def subset_and_save(
 
     Need to have the pyarrow library as a dependency
     """
-    output_directory.mkdir(parents=True, exist_ok=True)
+    output_path.mkdir(parents=True, exist_ok=True)
     _subset(
         request,
         user_configuration,
         url_metadata,
-        output_directory,
+        output_path,
         disable_progress_bar,
     )
 
