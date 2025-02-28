@@ -1,3 +1,5 @@
+name: Release
+
 on:
   workflow_dispatch: {}
 
@@ -7,8 +9,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_BOT_RW_TOKEN }}
 
       - name: Install dependencies
         run: make install
