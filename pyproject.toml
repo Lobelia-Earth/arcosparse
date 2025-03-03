@@ -8,12 +8,12 @@ requires-python = ">=3.9"
 packages = [{include = "src/arcosparse", from = "src"}]
 
 [tool.poetry.dependencies]
-python = "^3.9"
-requests = "^2.32.3"
-pandas = "^2.2.3"
-pystac = ">=1.8.3"
-pyarrow = "^19.0.1"
-tqdm = "^4.67.1"
+python = ">=3.9"
+requests = "^2.27.1"
+pandas = "^2"
+pystac = "^1.8.3"
+pyarrow = ">=17.0.0"
+tqdm = "^4.65"
 
 
 [tool.poetry.group.dev.dependencies]
