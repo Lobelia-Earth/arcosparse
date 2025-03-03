@@ -155,4 +155,4 @@ dmypy.json
 cython_debug/
 
 # mac folder files
-# **/.DS_Store
+**/.DS_Store
