@@ -1,6 +1,6 @@
 from copy import deepcopy
 
-from arcosparse import open_dataset, subset_and_save
+from arcosparse import subset_and_return_dataframe, subset_and_save
 from arcosparse.models import (
     RequestedCoordinate,
     UserConfiguration,
@@ -46,13 +46,40 @@ REQUEST_WITH_WRONG_IDS.platform_ids = ["wrong_id"]
 
 class TestPlatformSubsetting:
     def test_platform_subsetting(self):
-        df = open_dataset(REQUEST, USER_CONFIGURATION, URL_METADATA)
+        df = subset_and_return_dataframe(
+            minimum_latitude=REQUEST.latitude.minimum,
+            maximum_latitude=REQUEST.latitude.maximum,
+            minimum_longitude=REQUEST.longitude.minimum,
+            maximum_longitude=REQUEST.longitude.maximum,
+            minimum_time=REQUEST.time.minimum,
+            maximum_time=REQUEST.time.maximum,
+            minimum_elevation=REQUEST.elevation.minimum,
+            maximum_elevation=REQUEST.elevation.maximum,
+            variables=REQUEST.variables,
+            platform_ids=REQUEST.platform_ids,
+            user_configuration=USER_CONFIGURATION,
+            url_metadata=URL_METADATA,
+        )
         values = df["platform_id"].values
         for platform_id in REQUEST.platform_ids:
             assert platform_id in values
 
     def test_platform_subsetting_save_locally(self, tmp_path):
-        subset_and_save(REQUEST, USER_CONFIGURATION, URL_METADATA, tmp_path)
+        subset_and_save(
+            minimum_latitude=REQUEST.latitude.minimum,
+            maximum_latitude=REQUEST.latitude.maximum,
+            minimum_longitude=REQUEST.longitude.minimum,
+            maximum_longitude=REQUEST.longitude.maximum,
+            minimum_time=REQUEST.time.minimum,
+            maximum_time=REQUEST.time.maximum,
+            minimum_elevation=REQUEST.elevation.minimum,
+            maximum_elevation=REQUEST.elevation.maximum,
+            variables=REQUEST.variables,
+            platform_ids=REQUEST.platform_ids,
+            user_configuration=USER_CONFIGURATION,
+            url_metadata=URL_METADATA,
+            output_path=tmp_path,
+        )
         expected_files = [
             "B-Sulafjorden___MO_PSAL_6672.0.0.0.parquet",
             "B-Sulafjorden___MO_PSAL_6673.0.0.0.parquet",
@@ -64,8 +91,19 @@ class TestPlatformSubsetting:
 
     def test_wrong_platform_ids(self):
         try:
-            _ = open_dataset(
-                REQUEST_WITH_WRONG_IDS, USER_CONFIGURATION, URL_METADATA
+            _ = subset_and_return_dataframe(
+                minimum_latitude=REQUEST_WITH_WRONG_IDS.latitude.minimum,
+                maximum_latitude=REQUEST_WITH_WRONG_IDS.latitude.maximum,
+                minimum_longitude=REQUEST_WITH_WRONG_IDS.longitude.minimum,
+                maximum_longitude=REQUEST_WITH_WRONG_IDS.longitude.maximum,
+                minimum_time=REQUEST_WITH_WRONG_IDS.time.minimum,
+                maximum_time=REQUEST_WITH_WRONG_IDS.time.maximum,
+                minimum_elevation=REQUEST_WITH_WRONG_IDS.elevation.minimum,
+                maximum_elevation=REQUEST_WITH_WRONG_IDS.elevation.maximum,
+                variables=REQUEST_WITH_WRONG_IDS.variables,
+                platform_ids=REQUEST_WITH_WRONG_IDS.platform_ids,
+                user_configuration=USER_CONFIGURATION,
+                url_metadata=URL_METADATA,
             )
             assert False
         except ValueError as e:

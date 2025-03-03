@@ -51,9 +51,18 @@ if __name__ == "__main__":
     # 2024-12-16 08:58:00     258048 15.0.0.0.sqlite
     # 2024-12-18 19:49:59      77824 16.0.0.0.sqlite
     pandas = _subset(
-        request,
-        user_configuration,
-        url_metadata,
+        minimum_latitude=request.latitude.minimum,
+        maximum_latitude=request.latitude.maximum,
+        minimum_longitude=request.longitude.minimum,
+        maximum_longitude=request.longitude.maximum,
+        minimum_time=request.time.minimum,
+        maximum_time=request.time.maximum,
+        minimum_elevation=request.elevation.minimum,
+        maximum_elevation=request.elevation.maximum,
+        variables=request.variables,
+        platform_ids=request.platform_ids,
+        user_configuration=user_configuration,
+        url_metadata=url_metadata,
         output_path=Path("todelete"),
         # output_directory=None,
         disable_progress_bar=False,
