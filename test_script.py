@@ -54,7 +54,7 @@ if __name__ == "__main__":
         request,
         user_configuration,
         url_metadata,
-        output_directory=Path("todelete"),
+        output_path=Path("todelete"),
         # output_directory=None,
         disable_progress_bar=False,
     )
