@@ -297,7 +297,7 @@ def subset_and_return_dataframe(
 
 def get_platforms_names(
     url_metadata: str,
-    user_configuration: UserConfiguration,
+    user_configuration: UserConfiguration = UserConfiguration(),
 ) -> list[str]:
     """
     Get the platforms metadata from the metadata URL
