@@ -1,6 +1,8 @@
-from arcosparse.subsetter import open_dataset, subset_and_save
+from arcosparse.models import UserConfiguration
+from arcosparse.subsetter import subset_and_return_dataframe, subset_and_save
 
 __all__ = [
-    "open_dataset",
+    "subset_and_return_dataframe",
     "subset_and_save",
+    "UserConfiguration",
 ]
