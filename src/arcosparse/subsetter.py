@@ -60,19 +60,18 @@ def _subset(
         variables=variables,
         platform_ids=platform_ids,
     )
-    metadata = _get_stac_metadata(url_metadata, user_configuration)
     has_platform_ids_requested = bool(request.platform_ids)
-    platforms_metadata = None
+    metadata, platforms_metadata = _get_metadata(
+        url_metadata,
+        user_configuration,
+        has_platform_ids_requested,
+    )
     if has_platform_ids_requested:
-        platforms_asset = metadata.get_assets().get("platforms")
-        if platforms_asset is None:
+        if platforms_metadata is None:
             # TODO: custom error
             raise ValueError(
                 "The requested dataset does not have platform information."
             )
-        platforms_metadata = _get_platforms_metadata(
-            platforms_asset.href, user_configuration
-        )
         for platform_id in request.platform_ids:
             if platform_id not in platforms_metadata:
                 raise ValueError(
@@ -296,9 +295,26 @@ def subset_and_return_dataframe(
     return df
 
 
-def _get_stac_metadata(
-    url_metadata: str, user_configuration: UserConfiguration
-) -> pystac.Item:
+def get_platforms_names(
+    url_metadata: str,
+    user_configuration: UserConfiguration,
+) -> list[str]:
+    """
+    Get the platforms metadata from the metadata URL
+    """
+    _, platforms_metadata = _get_metadata(
+        url_metadata, user_configuration, True
+    )
+    if platforms_metadata is None:
+        return []
+    return list(platforms_metadata.keys())
+
+
+def _get_metadata(
+    url_metadata: str,
+    user_configuration: UserConfiguration,
+    platform_ids_subset: bool,
+) -> tuple[pystac.Item, Optional[dict[str, str]]]:
     with ConfiguredRequestsSession(
         user_configuration.disable_ssl,
         user_configuration.trust_env,
@@ -307,23 +323,17 @@ def _get_stac_metadata(
     ) as session:
         result = session.get(url_metadata)
         result.raise_for_status()
-        metadata_json = result.json()
+        metadata_item = pystac.Item.from_dict(result.json())
+        platforms_metadata = None
+        if platform_ids_subset:
+            platforms_asset = metadata_item.get_assets().get("platforms")
+            if platforms_asset is None:
+                return metadata_item, platforms_metadata
+            result = session.get(platforms_asset.href)
+            result.raise_for_status()
+            platforms_metadata = {
+                key: value["chunking"]
+                for key, value in result.json()["platforms"].items()
+            }
 
-        return pystac.Item.from_dict(metadata_json)
-
-
-def _get_platforms_metadata(
-    url: str, user_configuration: UserConfiguration
-) -> dict[str, str]:
-    with ConfiguredRequestsSession(
-        user_configuration.disable_ssl,
-        user_configuration.trust_env,
-        user_configuration.ssl_certificate_path,
-        user_configuration.extra_params,
-    ) as session:
-        result = session.get(url)
-        result.raise_for_status()
-        return {
-            key: value["chunking"]
-            for key, value in result.json()["platforms"].items()
-        }
+        return metadata_item, platforms_metadata
