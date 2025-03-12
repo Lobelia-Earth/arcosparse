@@ -136,8 +136,6 @@ def _subset(
     return pd.concat(results)
 
 
-# TODO: ask if it's okay that we can actually subset without credentials
-# well in the end it's the same as xarray
 def subset_and_save(
     url_metadata: str,
     minimum_latitude: Optional[float],
@@ -148,8 +146,7 @@ def subset_and_save(
     maximum_time: Optional[float],
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
-    # TODO: check if I can get the variables by default
-    variables: list[str] = [],
+    variables: list[str],
     platform_ids: list[str] = [],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     output_path: Optional[Path] = None,
@@ -177,8 +174,8 @@ def subset_and_save(
         The minimum elevation to subset
     maximum_elevation: Optional[float]
         The maximum elevation to subset
-    variables: list[str], default=[]
-        The variables to subset, if not set or empty will select all of them.
+    variables: list[str]
+        The variables to subset, required.
     platform_ids: list[str], default=[]
         The platform ids to subset. If see will use the platformChunked asset
     vertical_axis: Literal["elevation", "depth"], default="elevation"
@@ -254,7 +251,7 @@ def subset_and_return_dataframe(
     maximum_time: Optional[float],
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
-    variables: list[str] = [],
+    variables: list[str],
     platform_ids: list[str] = [],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     user_configuration: UserConfiguration = UserConfiguration(),
@@ -281,8 +278,8 @@ def subset_and_return_dataframe(
         The minimum elevation to subset
     maximum_elevation: Optional[float]
         The maximum elevation to subset
-    variables: list[str], default=[]
-        The variables to subset, if not set or empty will select all of them.
+    variables: list[str]
+        The variables to subset, required.
     platform_ids: list[str], default=[]
         The platform ids to subset. If see will use the platformChunked asset
     vertical_axis: Literal["elevation", "depth"], default="elevation"
