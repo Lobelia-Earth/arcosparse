@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import pandas as pd
 import pystac
@@ -33,6 +33,7 @@ def _subset(
     maximum_elevation: Optional[float],
     variables: list[str],
     platform_ids: list[str],
+    vertical_axis: Literal["elevation", "depth"],
     user_configuration: UserConfiguration,
     url_metadata: str,
     output_path: Optional[Path],
@@ -111,6 +112,7 @@ def _subset(
                     chunks_range.output_coordinates,
                     user_configuration,
                     output_filepath,
+                    vertical_axis,
                 )
             )
     logger.info("Downloading and converting to pandas-like dataframes")
@@ -137,6 +139,7 @@ def _subset(
 # TODO: ask if it's okay that we can actually subset without credentials
 # well in the end it's the same as xarray
 def subset_and_save(
+    url_metadata: str,
     minimum_latitude: Optional[float],
     maximum_latitude: Optional[float],
     minimum_longitude: Optional[float],
@@ -145,16 +148,19 @@ def subset_and_save(
     maximum_time: Optional[float],
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
-    variables: list[str],
-    platform_ids: list[str],
-    url_metadata: str,
-    output_path: Path,
+    # TODO: check if I can get the variables by default
+    variables: list[str] = [],
+    platform_ids: list[str] = [],
+    vertical_axis: Literal["elevation", "depth"] = "elevation",
+    output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
 ) -> None:
     """
     Parameters
     ----------
+    url_metadata: str
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting
     minimum_latitude: Optional[float]
         The minimum latitude to subset
     maximum_latitude: Optional[float]
@@ -171,17 +177,17 @@ def subset_and_save(
         The minimum elevation to subset
     maximum_elevation: Optional[float]
         The maximum elevation to subset
-    variables: list[str]
-        The variables to subset
-    platform_ids: list[str]
+    variables: list[str], default=[]
+        The variables to subset, if not set or empty will select all of them.
+    platform_ids: list[str], default=[]
         The platform ids to subset. If see will use the platformChunked asset
-    url_metadata: str
-        The URL to the stac metadata. It will be parsed and use to do the subsetting
-    output_path: Path
+    vertical_axis: Literal["elevation", "depth"], default="elevation"
+        If depth selected, we will rename the vertical axis to depth and multiply by -1.
+    output_path: Optional[Path], default=None
         The path where to save the subsetted data
-    user_configuration: UserConfiguration
+    user_configuration: Optional[UserConfiguration], default=UserConfiguration()
         The user configuration to use for the requests
-    disable_progress_bar: bool
+    disable_progress_bar: Optional[bool], default=False
         Disable the progress bar
 
     To open the result in pandas:
@@ -189,6 +195,11 @@ def subset_and_save(
     ```python
     import pandas as pd
 
+
+    # With latest pandas version you can also use directly:
+    df = pd.read_parquet(output_dir)
+
+    # In case, it does not work, you can try the following code:
     import glob
 
     # Get all partitioned Parquet files
@@ -210,7 +221,10 @@ def subset_and_save(
 
     Need to have the pyarrow library as a dependency
     """  # noqa
-    output_path.mkdir(parents=True, exist_ok=True)
+    if output_path:
+        output_path.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(".")
     _subset(
         minimum_latitude=minimum_latitude,
         maximum_latitude=maximum_latitude,
@@ -222,6 +236,7 @@ def subset_and_save(
         maximum_elevation=maximum_elevation,
         variables=variables,
         platform_ids=platform_ids,
+        vertical_axis=vertical_axis,
         user_configuration=user_configuration,
         url_metadata=url_metadata,
         output_path=output_path,
@@ -230,6 +245,7 @@ def subset_and_save(
 
 
 def subset_and_return_dataframe(
+    url_metadata: str,
     minimum_latitude: Optional[float],
     maximum_latitude: Optional[float],
     minimum_longitude: Optional[float],
@@ -238,15 +254,17 @@ def subset_and_return_dataframe(
     maximum_time: Optional[float],
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
-    variables: list[str],
-    platform_ids: list[str],
-    user_configuration: UserConfiguration,
-    url_metadata: str,
+    variables: list[str] = [],
+    platform_ids: list[str] = [],
+    vertical_axis: Literal["elevation", "depth"] = "elevation",
+    user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
 ) -> pd.DataFrame:
     """
     Parameters
     ----------
+    url_metadata: str
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting
     minimum_latitude: Optional[float]
         The minimum latitude to subset
     maximum_latitude: Optional[float]
@@ -263,18 +281,19 @@ def subset_and_return_dataframe(
         The minimum elevation to subset
     maximum_elevation: Optional[float]
         The maximum elevation to subset
-    variables: list[str]
-        The variables to subset
-    platform_ids: list[str]
+    variables: list[str], default=[]
+        The variables to subset, if not set or empty will select all of them.
+    platform_ids: list[str], default=[]
         The platform ids to subset. If see will use the platformChunked asset
-    url_metadata: str
-        The URL to the stac metadata. It will be parsed and use to do the subsetting
-    user_configuration: UserConfiguration
+    vertical_axis: Literal["elevation", "depth"], default="elevation"
+        If depth selected, we will rename the vertical axis to depth and multiply by -1.
+    user_configuration: Optional[UserConfiguration], default=UserConfiguration()
         The user configuration to use for the requests
-    disable_progress_bar: bool
+    disable_progress_bar: Optional[bool], default=False
         Disable the progress bar
     """  # noqa
     df = _subset(
+        url_metadata=url_metadata,
         minimum_latitude=minimum_latitude,
         maximum_latitude=maximum_latitude,
         minimum_longitude=minimum_longitude,
@@ -285,8 +304,8 @@ def subset_and_return_dataframe(
         maximum_elevation=maximum_elevation,
         variables=variables,
         platform_ids=platform_ids,
+        vertical_axis=vertical_axis,
         user_configuration=user_configuration,
-        url_metadata=url_metadata,
         output_path=None,
         disable_progress_bar=disable_progress_bar,
     )

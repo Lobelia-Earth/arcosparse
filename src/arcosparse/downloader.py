@@ -1,7 +1,7 @@
 import sqlite3
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 # TODO: if we have performances issues
 # check if we could use polars instead of pandas
@@ -20,6 +20,7 @@ def download_and_convert_to_pandas(
     output_coordinates: list[OutputCoordinate],
     user_configuration: UserConfiguration,
     output_path: Optional[Path],
+    vertical_axis: Literal["elevation", "depth"],
 ) -> Optional[pd.DataFrame]:
     if platform_id:
         url_to_download = (
@@ -59,8 +60,6 @@ def download_and_convert_to_pandas(
                     for coordinate in output_coordinates
                 ]
             )
-
-        # TODO: add some logger debug here
         with tempfile.NamedTemporaryFile(
             suffix=".sqlite", delete=True
         ) as temp_file:
@@ -70,6 +69,9 @@ def download_and_convert_to_pandas(
                 df = pd.read_sql(query, connection)
                 if df.empty:
                     return None
+                if vertical_axis == "depth" and "elevation" in df.columns:
+                    df["depth"] = -df["elevation"]
+                    df.drop(columns=["elevation"], inplace=True)
                 if output_path:
                     df.to_parquet(output_path)
                     return None
