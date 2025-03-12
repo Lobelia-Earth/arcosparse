@@ -138,7 +138,7 @@ class Asset:
             raise ValueError(
                 f"No variables found in the metadata for {asset_name} asset. "
                 f"Requested variables: {variables} "
-                f"while available variables: {variables_asset}"
+                f"while available variables: {list(variables_asset)}"
             )
         return cls(
             asset_id=asset_name,
