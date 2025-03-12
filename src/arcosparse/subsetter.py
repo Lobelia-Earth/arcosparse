@@ -18,9 +18,6 @@ from arcosparse.models import (
 from arcosparse.sessions import ConfiguredRequestsSession
 from arcosparse.utils import run_concurrently
 
-# quite high because a lot of 403
-MAX_CONCURRENT_REQUESTS = 50
-
 
 def _subset(
     minimum_latitude: Optional[float],
@@ -121,7 +118,7 @@ def _subset(
         for result in run_concurrently(
             download_and_convert_to_pandas,
             tasks,
-            max_concurrent_requests=MAX_CONCURRENT_REQUESTS,
+            max_concurrent_requests=user_configuration.max_concurrent_requests,
             tdqm_bar_configuration={
                 "disable": disable_progress_bar,
                 "desc": "Downloading files",
@@ -332,10 +329,7 @@ def _get_metadata(
     platform_ids_subset: bool,
 ) -> tuple[pystac.Item, Optional[dict[str, str]]]:
     with ConfiguredRequestsSession(
-        user_configuration.disable_ssl,
-        user_configuration.trust_env,
-        user_configuration.ssl_certificate_path,
-        user_configuration.extra_params,
+        user_configuration=user_configuration
     ) as session:
         result = session.get(url_metadata)
         result.raise_for_status()

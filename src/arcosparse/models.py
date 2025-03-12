@@ -208,6 +208,9 @@ class UserConfiguration:
     disable_ssl: bool = False
     trust_env: bool = True
     ssl_certificate_path: Optional[str] = None
+    max_concurrent_requests: int = 10
+    https_retries: int = 5
+    https_timeout: int = 60
     extra_params: dict[str, str] = field(default_factory=dict)
 
 

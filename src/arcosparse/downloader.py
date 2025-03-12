@@ -31,10 +31,7 @@ def download_and_convert_to_pandas(
     logger.debug(f"downloading {url_to_download}")
     # TODO: check if we'd better use boto3 instead of requests
     with ConfiguredRequestsSession(
-        user_configuration.disable_ssl,
-        user_configuration.trust_env,
-        user_configuration.ssl_certificate_path,
-        user_configuration.extra_params,
+        user_configuration=user_configuration
     ) as session:
         response = session.get(url_to_download)
         # means that the chunk does not exist
