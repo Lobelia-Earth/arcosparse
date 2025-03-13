@@ -64,6 +64,8 @@ def download_and_convert_to_pandas(
             temp_file.flush()
             with sqlite3.connect(temp_file.name) as connection:
                 df = pd.read_sql(query, connection)
+                df["variable"] = variable_id
+                df.dropna(axis=1, inplace=True)
                 if df.empty:
                     return None
                 if vertical_axis == "depth" and "elevation" in df.columns:
