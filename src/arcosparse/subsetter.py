@@ -154,35 +154,35 @@ def subset_and_save(
     Parameters
     ----------
     url_metadata: str
-        The URL to the STAC metadata. It will be parsed and use to do the subsetting
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting.
     minimum_latitude: Optional[float]
-        The minimum latitude to subset
+        The minimum latitude to subset.
     maximum_latitude: Optional[float]
-        The maximum latitude to subset
+        The maximum latitude to subset.
     minimum_longitude: Optional[float]
-        The minimum longitude to subset
+        The minimum longitude to subset.
     maximum_longitude: Optional[float]
-        The maximum longitude to subset
+        The maximum longitude to subset.
     minimum_time: Optional[float]
-        The minimum time to subset as a Unix timestamp in seconds
+        The minimum time to subset as a Unix timestamp in seconds.
     maximum_time: Optional[float]
-        The maximum time to subset as a Unix timestamp in seconds
+        The maximum time to subset as a Unix timestamp in seconds.
     minimum_elevation: Optional[float]
-        The minimum elevation to subset
+        The minimum elevation to subset.
     maximum_elevation: Optional[float]
-        The maximum elevation to subset
+        The maximum elevation to subset.
     variables: list[str]
         The variables to subset, required.
     platform_ids: list[str], default=[]
-        The platform ids to subset. If see will use the platformChunked asset
+        The platform ids to subset. If see will use the platformChunked asset.
     vertical_axis: Literal["elevation", "depth"], default="elevation"
         If depth selected, we will rename the vertical axis to depth and multiply by -1.
     output_path: Optional[Path], default=None
-        The path where to save the subsetted data
+        The path where to save the subsetted data.
     user_configuration: Optional[UserConfiguration], default=UserConfiguration()
-        The user configuration to use for the requests
+        The user configuration to use for the requests.
     disable_progress_bar: Optional[bool], default=False
-        Disable the progress bar
+        Disable the progress bar.
 
     To open the result in pandas:
 
@@ -258,33 +258,33 @@ def subset_and_return_dataframe(
     Parameters
     ----------
     url_metadata: str
-        The URL to the STAC metadata. It will be parsed and use to do the subsetting
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting.
     minimum_latitude: Optional[float]
-        The minimum latitude to subset
+        The minimum latitude to subset.
     maximum_latitude: Optional[float]
-        The maximum latitude to subset
+        The maximum latitude to subset.
     minimum_longitude: Optional[float]
-        The minimum longitude to subset
+        The minimum longitude to subset.
     maximum_longitude: Optional[float]
-        The maximum longitude to subset
+        The maximum longitude to subset.
     minimum_time: Optional[float]
-        The minimum time to subset as a Unix timestamp in seconds
+        The minimum time to subset as a Unix timestamp in seconds.
     maximum_time: Optional[float]
-        The maximum time to subset as a Unix timestamp in seconds
+        The maximum time to subset as a Unix timestamp in seconds.
     minimum_elevation: Optional[float]
-        The minimum elevation to subset
+        The minimum elevation to subset.
     maximum_elevation: Optional[float]
-        The maximum elevation to subset
+        The maximum elevation to subset.
     variables: list[str]
         The variables to subset, required.
     platform_ids: list[str], default=[]
-        The platform ids to subset. If see will use the platformChunked asset
+        The platform ids to subset. If see will use the platformChunked asset.
     vertical_axis: Literal["elevation", "depth"], default="elevation"
         If depth selected, we will rename the vertical axis to depth and multiply by -1.
-    user_configuration: Optional[UserConfiguration], default=UserConfiguration()
-        The user configuration to use for the requests
+    user_configuration: Optional[arcosparse.UserConfiguration], default=arcosparse.UserConfiguration()
+        The user configuration to use for the requests.
     disable_progress_bar: Optional[bool], default=False
-        Disable the progress bar
+        Disable the progress bar.
     """  # noqa
     df = _subset(
         url_metadata=url_metadata,
