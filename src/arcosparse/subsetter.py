@@ -144,7 +144,7 @@ def subset_and_save(
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
     variables: list[str],
-    platform_ids: list[str] = [],
+    entities: list[str] = [],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
@@ -173,8 +173,8 @@ def subset_and_save(
         The maximum elevation to subset.
     variables: list[str]
         The variables to subset, required.
-    platform_ids: list[str], default=[]
-        The platform ids to subset. If see will use the platformChunked asset.
+    entities: list[str], default=[]
+        The entities to subset on. If set, it will use the platformChunked asset.
     vertical_axis: Literal["elevation", "depth"], default="elevation"
         If depth selected, we will rename the vertical axis to depth and multiply by -1.
     output_path: Optional[Path], default=None
@@ -229,7 +229,7 @@ def subset_and_save(
         minimum_elevation=minimum_elevation,
         maximum_elevation=maximum_elevation,
         variables=variables,
-        platform_ids=platform_ids,
+        platform_ids=entities,
         vertical_axis=vertical_axis,
         user_configuration=user_configuration,
         url_metadata=url_metadata,
@@ -249,7 +249,7 @@ def subset_and_return_dataframe(
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
     variables: list[str],
-    platform_ids: list[str] = [],
+    entities: list[str] = [],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
@@ -277,8 +277,8 @@ def subset_and_return_dataframe(
         The maximum elevation to subset.
     variables: list[str]
         The variables to subset, required.
-    platform_ids: list[str], default=[]
-        The platform ids to subset. If see will use the platformChunked asset.
+    entities: list[str], default=[]
+        The entities to subset on. If set, it will use the platformChunked asset.
     vertical_axis: Literal["elevation", "depth"], default="elevation"
         If depth selected, we will rename the vertical axis to depth and multiply by -1.
     user_configuration: Optional[arcosparse.UserConfiguration], default=arcosparse.UserConfiguration()
@@ -297,7 +297,7 @@ def subset_and_return_dataframe(
         minimum_elevation=minimum_elevation,
         maximum_elevation=maximum_elevation,
         variables=variables,
-        platform_ids=platform_ids,
+        platform_ids=entities,
         vertical_axis=vertical_axis,
         user_configuration=user_configuration,
         output_path=None,

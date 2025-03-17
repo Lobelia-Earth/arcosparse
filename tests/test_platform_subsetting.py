@@ -33,7 +33,7 @@ REQUEST = UserRequest(
     elevation=RequestedCoordinate(
         maximum=120, minimum=-10, coordinate_id="elevation"
     ),
-    variables=["ATMP", "PSAL"],
+    variables=["TEMP", "PSAL"],
     platform_ids=[
         "F-Vartdalsfjorden___MO",
         "B-Sulafjorden___MO",
@@ -47,6 +47,7 @@ REQUEST_WITH_WRONG_IDS.platform_ids = ["wrong_id"]
 class TestPlatformSubsetting:
     def test_platform_subsetting(self):
         df = subset_and_return_dataframe(
+            url_metadata=URL_METADATA,
             minimum_latitude=REQUEST.latitude.minimum,
             maximum_latitude=REQUEST.latitude.maximum,
             minimum_longitude=REQUEST.longitude.minimum,
@@ -56,13 +57,15 @@ class TestPlatformSubsetting:
             minimum_elevation=REQUEST.elevation.minimum,
             maximum_elevation=REQUEST.elevation.maximum,
             variables=REQUEST.variables,
-            platform_ids=REQUEST.platform_ids,
+            entities=REQUEST.platform_ids,
             user_configuration=USER_CONFIGURATION,
-            url_metadata=URL_METADATA,
         )
-        values = df["platform_id"].values
+        values_platform_ids = df["platform_id"].values
         for platform_id in REQUEST.platform_ids:
-            assert platform_id in values
+            assert platform_id in values_platform_ids
+        values_variables = df["variable"].values
+        for variable in REQUEST.variables:
+            assert variable in values_variables
 
     def test_platform_subsetting_save_locally(self, tmp_path):
         subset_and_save(
@@ -75,7 +78,7 @@ class TestPlatformSubsetting:
             minimum_elevation=REQUEST.elevation.minimum,
             maximum_elevation=REQUEST.elevation.maximum,
             variables=REQUEST.variables,
-            platform_ids=REQUEST.platform_ids,
+            entities=REQUEST.platform_ids,
             user_configuration=USER_CONFIGURATION,
             url_metadata=URL_METADATA,
             output_path=tmp_path,
@@ -101,7 +104,7 @@ class TestPlatformSubsetting:
                 minimum_elevation=REQUEST_WITH_WRONG_IDS.elevation.minimum,
                 maximum_elevation=REQUEST_WITH_WRONG_IDS.elevation.maximum,
                 variables=REQUEST_WITH_WRONG_IDS.variables,
-                platform_ids=REQUEST_WITH_WRONG_IDS.platform_ids,
+                entities=REQUEST_WITH_WRONG_IDS.platform_ids,
                 user_configuration=USER_CONFIGURATION,
                 url_metadata=URL_METADATA,
             )
