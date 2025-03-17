@@ -29,3 +29,5 @@ jobs:
 
       - name: Create Github release
         run: gh release create v${{ steps.set-version.outputs.VERSION }} --generate-notes
+        env:
+          GH_TOKEN: ${{ secrets.GH_BOT_RW_TOKEN }}
