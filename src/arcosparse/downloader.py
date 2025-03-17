@@ -1,7 +1,7 @@
 import sqlite3
 import tempfile
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 # TODO: if we have performances issues
 # check if we could use polars instead of pandas
@@ -20,6 +20,7 @@ def download_and_convert_to_pandas(
     output_coordinates: list[OutputCoordinate],
     user_configuration: UserConfiguration,
     output_path: Optional[Path],
+    vertical_axis: Literal["elevation", "depth"],
 ) -> Optional[pd.DataFrame]:
     if platform_id:
         url_to_download = (
@@ -30,10 +31,7 @@ def download_and_convert_to_pandas(
     logger.debug(f"downloading {url_to_download}")
     # TODO: check if we'd better use boto3 instead of requests
     with ConfiguredRequestsSession(
-        user_configuration.disable_ssl,
-        user_configuration.trust_env,
-        user_configuration.ssl_certificate_path,
-        user_configuration.extra_params,
+        user_configuration=user_configuration
     ) as session:
         response = session.get(url_to_download)
         # means that the chunk does not exist
@@ -59,8 +57,6 @@ def download_and_convert_to_pandas(
                     for coordinate in output_coordinates
                 ]
             )
-
-        # TODO: add some logger debug here
         with tempfile.NamedTemporaryFile(
             suffix=".sqlite", delete=True
         ) as temp_file:
@@ -68,8 +64,13 @@ def download_and_convert_to_pandas(
             temp_file.flush()
             with sqlite3.connect(temp_file.name) as connection:
                 df = pd.read_sql(query, connection)
+                df["variable"] = variable_id
+                df.dropna(axis=1, inplace=True)
                 if df.empty:
                     return None
+                if vertical_axis == "depth" and "elevation" in df.columns:
+                    df["depth"] = -df["elevation"]
+                    df.drop(columns=["elevation"], inplace=True)
                 if output_path:
                     df.to_parquet(output_path)
                     return None

@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 
+import pandas as pd
+
 from arcosparse.models import (
     RequestedCoordinate,
     UserConfiguration,
@@ -38,19 +40,20 @@ if __name__ == "__main__":
             maximum=120, minimum=-10, coordinate_id="elevation"
         ),
         variables=["ATMP", "PSAL"],
-        platform_ids=[
-            "F-Vartdalsfjorden___MO",
-            "B-Sulafjorden___MO",
-        ],  # [20726 rows x 10 columns]
-        # platform_ids=[], # [100938 rows x 10 columns]
+        # platform_ids=[
+        #     "F-Vartdalsfjorden___MO",
+        #     "B-Sulafjorden___MO",
+        # ],  # [20726 rows x 10 columns]
+        platform_ids=[],  # [100938 rows x 10 columns]
     )
     url_metadata = "https://stac.marine.copernicus.eu/metadata/INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311--ext--history/dataset.stac.json"  # noqa
-
+    output_path = Path("todelete")
+    output_path.mkdir(parents=True, exist_ok=True)
     # should download 3 chunks
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite
     # 2024-12-16 08:58:00     258048 15.0.0.0.sqlite
     # 2024-12-18 19:49:59      77824 16.0.0.0.sqlite
-    pandas = _subset(
+    _subset(
         minimum_latitude=request.latitude.minimum,
         maximum_latitude=request.latitude.maximum,
         minimum_longitude=request.longitude.minimum,
@@ -61,10 +64,20 @@ if __name__ == "__main__":
         maximum_elevation=request.elevation.maximum,
         variables=request.variables,
         platform_ids=request.platform_ids,
+        # vertical_axis="depth",
+        vertical_axis="elevation",
         user_configuration=user_configuration,
         url_metadata=url_metadata,
-        output_path=Path("todelete"),
+        output_path=output_path,
         # output_directory=None,
         disable_progress_bar=False,
     )
-    print(pandas)
+
+    # open parquet file
+    df = pd.read_parquet("todelete")
+    print(df)
+    try:
+        print(df["elevation"])
+    except KeyError:
+        print("elevation not in the dataframe")
+        print(df["depth"])

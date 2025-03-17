@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 import pandas as pd
 import pystac
@@ -18,9 +18,6 @@ from arcosparse.models import (
 from arcosparse.sessions import ConfiguredRequestsSession
 from arcosparse.utils import run_concurrently
 
-# quite high because a lot of 403
-MAX_CONCURRENT_REQUESTS = 50
-
 
 def _subset(
     minimum_latitude: Optional[float],
@@ -33,6 +30,7 @@ def _subset(
     maximum_elevation: Optional[float],
     variables: list[str],
     platform_ids: list[str],
+    vertical_axis: Literal["elevation", "depth"],
     user_configuration: UserConfiguration,
     url_metadata: str,
     output_path: Optional[Path],
@@ -111,6 +109,7 @@ def _subset(
                     chunks_range.output_coordinates,
                     user_configuration,
                     output_filepath,
+                    vertical_axis,
                 )
             )
     logger.info("Downloading and converting to pandas-like dataframes")
@@ -119,7 +118,7 @@ def _subset(
         for result in run_concurrently(
             download_and_convert_to_pandas,
             tasks,
-            max_concurrent_requests=MAX_CONCURRENT_REQUESTS,
+            max_concurrent_requests=user_configuration.max_concurrent_requests,
             tdqm_bar_configuration={
                 "disable": disable_progress_bar,
                 "desc": "Downloading files",
@@ -134,9 +133,8 @@ def _subset(
     return pd.concat(results)
 
 
-# TODO: ask if it's okay that we can actually subset without credentials
-# well in the end it's the same as xarray
 def subset_and_save(
+    url_metadata: str,
     minimum_latitude: Optional[float],
     maximum_latitude: Optional[float],
     minimum_longitude: Optional[float],
@@ -146,49 +144,56 @@ def subset_and_save(
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
     variables: list[str],
-    platform_ids: list[str],
-    url_metadata: str,
-    output_path: Path,
+    platform_ids: list[str] = [],
+    vertical_axis: Literal["elevation", "depth"] = "elevation",
+    output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
 ) -> None:
     """
     Parameters
     ----------
-    minimum_latitude: Optional[float]
-        The minimum latitude to subset
-    maximum_latitude: Optional[float]
-        The maximum latitude to subset
-    minimum_longitude: Optional[float]
-        The minimum longitude to subset
-    maximum_longitude: Optional[float]
-        The maximum longitude to subset
-    minimum_time: Optional[float]
-        The minimum time to subset as a Unix timestamp in seconds
-    maximum_time: Optional[float]
-        The maximum time to subset as a Unix timestamp in seconds
-    minimum_elevation: Optional[float]
-        The minimum elevation to subset
-    maximum_elevation: Optional[float]
-        The maximum elevation to subset
-    variables: list[str]
-        The variables to subset
-    platform_ids: list[str]
-        The platform ids to subset. If see will use the platformChunked asset
     url_metadata: str
-        The URL to the stac metadata. It will be parsed and use to do the subsetting
-    output_path: Path
-        The path where to save the subsetted data
-    user_configuration: UserConfiguration
-        The user configuration to use for the requests
-    disable_progress_bar: bool
-        Disable the progress bar
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting.
+    minimum_latitude: Optional[float]
+        The minimum latitude to subset.
+    maximum_latitude: Optional[float]
+        The maximum latitude to subset.
+    minimum_longitude: Optional[float]
+        The minimum longitude to subset.
+    maximum_longitude: Optional[float]
+        The maximum longitude to subset.
+    minimum_time: Optional[float]
+        The minimum time to subset as a Unix timestamp in seconds.
+    maximum_time: Optional[float]
+        The maximum time to subset as a Unix timestamp in seconds.
+    minimum_elevation: Optional[float]
+        The minimum elevation to subset.
+    maximum_elevation: Optional[float]
+        The maximum elevation to subset.
+    variables: list[str]
+        The variables to subset, required.
+    platform_ids: list[str], default=[]
+        The platform ids to subset. If see will use the platformChunked asset.
+    vertical_axis: Literal["elevation", "depth"], default="elevation"
+        If depth selected, we will rename the vertical axis to depth and multiply by -1.
+    output_path: Optional[Path], default=None
+        The path where to save the subsetted data.
+    user_configuration: Optional[UserConfiguration], default=UserConfiguration()
+        The user configuration to use for the requests.
+    disable_progress_bar: Optional[bool], default=False
+        Disable the progress bar.
 
     To open the result in pandas:
 
     ```python
     import pandas as pd
 
+
+    # With latest pandas version you can also use directly:
+    df = pd.read_parquet(output_dir)
+
+    # In case, it does not work, you can try the following code:
     import glob
 
     # Get all partitioned Parquet files
@@ -210,7 +215,10 @@ def subset_and_save(
 
     Need to have the pyarrow library as a dependency
     """  # noqa
-    output_path.mkdir(parents=True, exist_ok=True)
+    if output_path:
+        output_path.mkdir(parents=True, exist_ok=True)
+    else:
+        output_path = Path(".")
     _subset(
         minimum_latitude=minimum_latitude,
         maximum_latitude=maximum_latitude,
@@ -222,6 +230,7 @@ def subset_and_save(
         maximum_elevation=maximum_elevation,
         variables=variables,
         platform_ids=platform_ids,
+        vertical_axis=vertical_axis,
         user_configuration=user_configuration,
         url_metadata=url_metadata,
         output_path=output_path,
@@ -230,6 +239,7 @@ def subset_and_save(
 
 
 def subset_and_return_dataframe(
+    url_metadata: str,
     minimum_latitude: Optional[float],
     maximum_latitude: Optional[float],
     minimum_longitude: Optional[float],
@@ -239,42 +249,45 @@ def subset_and_return_dataframe(
     minimum_elevation: Optional[float],
     maximum_elevation: Optional[float],
     variables: list[str],
-    platform_ids: list[str],
-    user_configuration: UserConfiguration,
-    url_metadata: str,
+    platform_ids: list[str] = [],
+    vertical_axis: Literal["elevation", "depth"] = "elevation",
+    user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
 ) -> pd.DataFrame:
     """
     Parameters
     ----------
-    minimum_latitude: Optional[float]
-        The minimum latitude to subset
-    maximum_latitude: Optional[float]
-        The maximum latitude to subset
-    minimum_longitude: Optional[float]
-        The minimum longitude to subset
-    maximum_longitude: Optional[float]
-        The maximum longitude to subset
-    minimum_time: Optional[float]
-        The minimum time to subset as a Unix timestamp in seconds
-    maximum_time: Optional[float]
-        The maximum time to subset as a Unix timestamp in seconds
-    minimum_elevation: Optional[float]
-        The minimum elevation to subset
-    maximum_elevation: Optional[float]
-        The maximum elevation to subset
-    variables: list[str]
-        The variables to subset
-    platform_ids: list[str]
-        The platform ids to subset. If see will use the platformChunked asset
     url_metadata: str
-        The URL to the stac metadata. It will be parsed and use to do the subsetting
-    user_configuration: UserConfiguration
-        The user configuration to use for the requests
-    disable_progress_bar: bool
-        Disable the progress bar
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting.
+    minimum_latitude: Optional[float]
+        The minimum latitude to subset.
+    maximum_latitude: Optional[float]
+        The maximum latitude to subset.
+    minimum_longitude: Optional[float]
+        The minimum longitude to subset.
+    maximum_longitude: Optional[float]
+        The maximum longitude to subset.
+    minimum_time: Optional[float]
+        The minimum time to subset as a Unix timestamp in seconds.
+    maximum_time: Optional[float]
+        The maximum time to subset as a Unix timestamp in seconds.
+    minimum_elevation: Optional[float]
+        The minimum elevation to subset.
+    maximum_elevation: Optional[float]
+        The maximum elevation to subset.
+    variables: list[str]
+        The variables to subset, required.
+    platform_ids: list[str], default=[]
+        The platform ids to subset. If see will use the platformChunked asset.
+    vertical_axis: Literal["elevation", "depth"], default="elevation"
+        If depth selected, we will rename the vertical axis to depth and multiply by -1.
+    user_configuration: Optional[arcosparse.UserConfiguration], default=arcosparse.UserConfiguration()
+        The user configuration to use for the requests.
+    disable_progress_bar: Optional[bool], default=False
+        Disable the progress bar.
     """  # noqa
     df = _subset(
+        url_metadata=url_metadata,
         minimum_latitude=minimum_latitude,
         maximum_latitude=maximum_latitude,
         minimum_longitude=minimum_longitude,
@@ -285,8 +298,8 @@ def subset_and_return_dataframe(
         maximum_elevation=maximum_elevation,
         variables=variables,
         platform_ids=platform_ids,
+        vertical_axis=vertical_axis,
         user_configuration=user_configuration,
-        url_metadata=url_metadata,
         output_path=None,
         disable_progress_bar=disable_progress_bar,
     )
@@ -316,10 +329,7 @@ def _get_metadata(
     platform_ids_subset: bool,
 ) -> tuple[pystac.Item, Optional[dict[str, str]]]:
     with ConfiguredRequestsSession(
-        user_configuration.disable_ssl,
-        user_configuration.trust_env,
-        user_configuration.ssl_certificate_path,
-        user_configuration.extra_params,
+        user_configuration=user_configuration
     ) as session:
         result = session.get(url_metadata)
         result.raise_for_status()

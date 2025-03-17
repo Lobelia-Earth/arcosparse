@@ -138,7 +138,7 @@ class Asset:
             raise ValueError(
                 f"No variables found in the metadata for {asset_name} asset. "
                 f"Requested variables: {variables} "
-                f"while available variables: {variables_asset}"
+                f"while available variables: {list(variables_asset)}"
             )
         return cls(
             asset_id=asset_name,
@@ -208,6 +208,9 @@ class UserConfiguration:
     disable_ssl: bool = False
     trust_env: bool = True
     ssl_certificate_path: Optional[str] = None
+    max_concurrent_requests: int = 10
+    https_retries: int = 5
+    https_timeout: int = 60
     extra_params: dict[str, str] = field(default_factory=dict)
 
 

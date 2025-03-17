@@ -1,5 +1,4 @@
 import logging
-from typing import Optional
 
 import certifi
 import requests
@@ -7,6 +6,7 @@ import requests.auth
 from requests.adapters import HTTPAdapter, Retry
 
 from arcosparse.environment_variables import PROXY_HTTP, PROXY_HTTPS
+from arcosparse.models import UserConfiguration
 
 logger = logging.getLogger("copernicusmarine")
 
@@ -16,9 +16,6 @@ if PROXY_HTTP:
 if PROXY_HTTPS:
     PROXIES["https"] = PROXY_HTTPS
 
-HTTPS_TIMEOUT = 60
-HTTPS_RETRIES = 5
-
 
 # TODO: add tests
 # example: with https://httpbin.org/delay/10 or
@@ -26,33 +23,33 @@ HTTPS_RETRIES = 5
 class ConfiguredRequestsSession(requests.Session):
     def __init__(
         self,
-        disable_ssl_context: bool,
-        trust_env: bool,
-        ssl_certificate_path: Optional[str],
-        extra_params: dict[str, str] = {},
+        user_configuration: UserConfiguration,
         *args,
         **kwargs,
     ):
         super().__init__(*args, **kwargs)
-        self.trust_env = trust_env
-        if disable_ssl_context:
+        self.trust_env = user_configuration.trust_env
+        if user_configuration.disable_ssl:
             self.verify = False
         else:
-            self.verify = ssl_certificate_path or certifi.where()
+            self.verify = (
+                user_configuration.ssl_certificate_path or certifi.where()
+            )
         self.proxies = PROXIES
-        if HTTPS_RETRIES:
+        if user_configuration.https_retries:
             self.mount(
                 "https://",
                 HTTPAdapter(
                     max_retries=Retry(
-                        total=HTTPS_RETRIES,
+                        total=user_configuration.https_retries,
                         backoff_factor=1,
                         status_forcelist=[408, 429, 500, 502, 503, 504],
                     )
                 ),
             )
-        self.params = extra_params
+        self.params = user_configuration.extra_params
+        self.https_timeout = user_configuration.https_timeout
 
     def request(self, *args, **kwargs):
-        kwargs.setdefault("timeout", HTTPS_TIMEOUT)
+        kwargs.setdefault("timeout", self.https_timeout)
         return super().request(*args, **kwargs)
