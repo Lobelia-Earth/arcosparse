@@ -44,7 +44,7 @@ def select_best_asset_and_get_chunks(
                 platforms_metadata=platforms_metadata,
             )
         )
-        logger.info("Downloading using platform chunked")
+        logger.debug("Downloading using platform chunked")
         return chunks_platform_chunked, platform_chunked_url
     chunks_time_chunked, time_chunked_url, number_chunks_time_chunked = (
         _get_chunks_to_download(metadata, request, "timeChunked")
@@ -57,10 +57,10 @@ def select_best_asset_and_get_chunks(
     # geo*2 because it's in the code of tero-sparse
     # TODO: ask why this is the case
     if number_chunks_time_chunked <= 2 * number_chunks_geo_chunked:
-        logger.info("Downloading using time chunked")
+        logger.debug("Downloading using time chunked")
         return chunks_time_chunked, time_chunked_url
     else:
-        logger.info("Downloading using geo chunked")
+        logger.debug("Downloading using geo chunked")
         return chunks_geo_chunked, geo_chunked_url
 
 

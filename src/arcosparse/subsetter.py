@@ -75,7 +75,6 @@ def _subset(
                 raise ValueError(
                     f"Platform {platform_id} is not available in the dataset."
                 )
-    logger.info("Selecting the best asset and chunks to download")
     chunks_to_download, asset_url = select_best_asset_and_get_chunks(
         metadata, request, has_platform_ids_requested, platforms_metadata
     )
@@ -112,7 +111,6 @@ def _subset(
                     vertical_axis,
                 )
             )
-    logger.info("Downloading and converting to pandas-like dataframes")
     results = [
         result
         for result in run_concurrently(
@@ -312,8 +310,33 @@ def get_platforms_names(
     url_metadata: str,
     user_configuration: UserConfiguration = UserConfiguration(),
 ) -> list[str]:
+    logger.warning(
+        "'get_platforms_names' is deprecated, please use get_entities_ids instead."
+    )
+    return get_entities_ids(url_metadata, user_configuration)
+
+
+def get_entities_ids(
+    url_metadata: str,
+    user_configuration: UserConfiguration = UserConfiguration(),
+) -> list[str]:
     """
-    Get the platforms metadata from the metadata URL
+    Retrieve the ids of the entities available in the dataset.
+    You can use those ids to subset the data.
+
+    Parameters
+    ----------
+
+    url_metadata: str
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting.
+    user_configuration: Optional[arcosparse.UserConfiguration], default=arcosparse.UserConfiguration()
+        The user configuration to use for the requests.
+
+    Returns
+    -------
+
+    list[str]
+        The list of entities ids available in the dataset.
     """
     _, platforms_metadata = _get_metadata(
         url_metadata, user_configuration, True
