@@ -16,7 +16,7 @@ from arcosparse.models import (
     UserRequest,
 )
 from arcosparse.sessions import ConfiguredRequestsSession
-from arcosparse.utils import run_concurrently
+from arcosparse.utils import deprecated, run_concurrently
 
 
 def _subset(
@@ -306,16 +306,6 @@ def subset_and_return_dataframe(
     return df
 
 
-def get_platforms_names(
-    url_metadata: str,
-    user_configuration: UserConfiguration = UserConfiguration(),
-) -> list[str]:
-    logger.warning(
-        "'get_platforms_names' is deprecated, please use get_entities_ids instead."
-    )
-    return get_entities_ids(url_metadata, user_configuration)
-
-
 def get_entities_ids(
     url_metadata: str,
     user_configuration: UserConfiguration = UserConfiguration(),
@@ -337,13 +327,21 @@ def get_entities_ids(
 
     list[str]
         The list of entities ids available in the dataset.
-    """
+    """  # noqa
     _, platforms_metadata = _get_metadata(
         url_metadata, user_configuration, True
     )
     if platforms_metadata is None:
         return []
     return list(platforms_metadata.keys())
+
+
+@deprecated(get_entities_ids)
+def get_platforms_names(
+    url_metadata: str,
+    user_configuration: UserConfiguration = UserConfiguration(),
+):
+    pass
 
 
 def _get_metadata(
