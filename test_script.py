@@ -65,12 +65,20 @@ if __name__ == "__main__":
         variables=request.variables,
         platform_ids=request.platform_ids,
         # vertical_axis="depth",
-        vertical_axis="elevation",
+        vertical_axis="depth",
         user_configuration=user_configuration,
         url_metadata=url_metadata,
         output_path=output_path,
         # output_directory=None,
         disable_progress_bar=False,
+        columns_rename={
+            "platform_id": "entity_id",
+            "platform_type": "entity_type",
+            # # does not raise if doesn't exist
+            "lksdjf": "lkshdf",
+            # raises cannot have the same name as a column
+            # "time": "entity_type",
+        },
     )
 
     # open parquet file
