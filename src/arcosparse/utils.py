@@ -1,8 +1,11 @@
 import concurrent.futures
+import functools
 from datetime import datetime
-from typing import Any, Callable, Sequence, TypeVar, Union
+from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 from tqdm import tqdm
+
+from arcosparse.logger import logger
 
 _T = TypeVar("_T")
 
@@ -37,3 +40,21 @@ def date_to_timestamp(date: Union[str, float]) -> float:
     if isinstance(date, float) or isinstance(date, int):
         return date
     return datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").timestamp()
+
+
+def deprecated(replacement: Optional[Callable] = None) -> Callable:
+    def deco(func: Callable):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            message = f"'{func.__name__}' is deprecated"
+            if replacement:
+                message += f", use '{replacement.__name__}' instead."
+                logger.warning(message)
+                return replacement(*args, **kwargs)
+            else:
+                logger.warning(message + ".")
+                return func(*args, **kwargs)
+
+        return wrapper
+
+    return deco
