@@ -1,3 +1,4 @@
+from copy import deepcopy
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -18,6 +19,14 @@ from arcosparse.models import (
 from arcosparse.sessions import ConfiguredRequestsSession
 from arcosparse.utils import deprecated, run_concurrently
 
+DEFAULT_COLUMNS_RENAME = {
+    "platform_id": "entity_id",
+    "platform_type": "entity_type",
+}
+ARTIFICIAL_COLUMNS_NAMES = {
+    value: key for key, value in DEFAULT_COLUMNS_RENAME.items()
+}
+
 
 def _subset(
     minimum_latitude: Optional[float],
@@ -35,8 +44,9 @@ def _subset(
     url_metadata: str,
     output_path: Optional[Path],
     disable_progress_bar: bool,
-    columns_rename: dict[str, str],
+    columns_rename: Optional[dict[str, str]],
 ) -> Optional[pd.DataFrame]:
+    columns_rename = _set_columns_rename(columns_rename)
     request = UserRequest(
         time=RequestedCoordinate(
             minimum=minimum_time, maximum=maximum_time, coordinate_id="time"
@@ -149,10 +159,7 @@ def subset_and_save(
     output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
-    columns_rename: dict[str, str] = {
-        "platform_id": "entity_id",
-        "platform_type": "entity_type",
-    },
+    columns_rename: Optional[dict[str, str]] = None,
 ) -> None:
     """
     Parameters
@@ -187,10 +194,9 @@ def subset_and_save(
         The user configuration to use for the requests.
     disable_progress_bar: Optional[bool], default=False
         Disable the progress bar.
-    columns_rename: dict[str, str], default={"platform_id": "entity_id", "platform_type": "entity_type"}
-        The columns to rename in the final dataframe. The data we retrieve from the database has 'platform_id' and 'platform_type' as columns.
-        We rename them to 'entity_id' and 'entity_type' respectively by default. You can change this behavior by passing a dictionary with the columns to rename.
-        If you pass an empty dictionary, the result will have 'platform_id' and 'platform_type' as columns.
+    columns_rename: Optional[dict[str, str]], default=None
+        The columns to rename in the resulting dataframe. Setting two columns with the same name will raise the follwing error:
+        "ValueError: Duplicate column names found"
 
     Returns
     -------
@@ -209,7 +215,7 @@ def subset_and_save(
         'value_qc'
         'variable'
 
-        If columns_rename is not the default value, columns will be renamed as specified in the columns_rename parameter.
+        Can be renamed using the columns_rename parameter.
         Also, 'elevation' will be renamed to 'depth' if vertical_axis is set to 'depth'.
 
     To open the result in pandas:
@@ -282,10 +288,7 @@ def subset_and_return_dataframe(
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
-    columns_rename: dict[str, str] = {
-        "platform_id": "entity_id",
-        "platform_type": "entity_type",
-    },
+    columns_rename: Optional[dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Parameters
@@ -318,10 +321,9 @@ def subset_and_return_dataframe(
         The user configuration to use for the requests.
     disable_progress_bar: Optional[bool], default=False
         Disable the progress bar.
-    columns_rename: dict[str, str], default={"platform_id": "entity_id", "platform_type": "entity_type"}
-        The columns to rename in the final dataframe. The data we retrieve from the database has 'platform_id' and 'platform_type' as columns.
-        We rename them to 'entity_id' and 'entity_type' respectively by default. You can change this behavior by passing a dictionary with the columns to rename.
-        If you pass an empty dictionary, the result will have 'platform_id' and 'platform_type' as columns.
+    columns_rename: Optional[dict[str, str]], default=None
+        The columns to rename in the resulting dataframe. Setting two columns with the same name will raise the follwing error:
+        "ValueError: Duplicate column names found"
 
     Returns
     -------
@@ -340,7 +342,7 @@ def subset_and_return_dataframe(
         'value_qc'
         'variable'
 
-        If columns_rename is not the default value, columns will be renamed as specified in the columns_rename parameter.
+        Can be renamed using the columns_rename parameter.
         Also, 'elevation' will be renamed to 'depth' if vertical_axis is set to 'depth'.
 
     """  # noqa
@@ -429,3 +431,19 @@ def _get_metadata(
             }
 
         return metadata_item, platforms_metadata
+
+
+def _set_columns_rename(
+    columns_rename: Optional[dict[str, str]],
+) -> dict[str, str]:
+    if not columns_rename:
+        return DEFAULT_COLUMNS_RENAME
+    columns_rename_updated = deepcopy(DEFAULT_COLUMNS_RENAME)
+    for key, value in columns_rename.items():
+        if key in DEFAULT_COLUMNS_RENAME:
+            continue
+        if key in ARTIFICIAL_COLUMNS_NAMES:
+            columns_rename_updated[ARTIFICIAL_COLUMNS_NAMES[key]] = value
+        else:
+            columns_rename_updated[key] = value
+    return columns_rename_updated

@@ -78,6 +78,8 @@ if __name__ == "__main__":
             "lksdjf": "lkshdf",
             # raises cannot have the same name as a column
             # "time": "entity_type",
+            # also works with the same name
+            # "platform_id": "platform_id",
         },
     )
 
