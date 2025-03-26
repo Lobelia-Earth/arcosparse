@@ -60,7 +60,7 @@ class TestPlatformSubsetting:
             entities=REQUEST.platform_ids,
             user_configuration=USER_CONFIGURATION,
         )
-        values_platform_ids = df["platform_id"].values
+        values_platform_ids = df["entity_id"].values
         for platform_id in REQUEST.platform_ids:
             assert platform_id in values_platform_ids
         values_variables = df["variable"].values

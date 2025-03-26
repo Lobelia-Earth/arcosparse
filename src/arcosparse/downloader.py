@@ -21,6 +21,7 @@ def download_and_convert_to_pandas(
     user_configuration: UserConfiguration,
     output_path: Optional[Path],
     vertical_axis: Literal["elevation", "depth"],
+    columns_rename: dict[str, str],
 ) -> Optional[pd.DataFrame]:
     if platform_id:
         url_to_download = (
@@ -69,8 +70,9 @@ def download_and_convert_to_pandas(
                 if df.empty:
                     return None
                 if vertical_axis == "depth" and "elevation" in df.columns:
-                    df["depth"] = -df["elevation"]
-                    df.drop(columns=["elevation"], inplace=True)
+                    df["elevation"] = -df["elevation"]
+                    columns_rename["elevation"] = "depth"
+                df.rename(columns=columns_rename, inplace=True)
                 if output_path:
                     df.to_parquet(output_path)
                     return None

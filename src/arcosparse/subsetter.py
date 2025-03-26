@@ -18,6 +18,11 @@ from arcosparse.models import (
 from arcosparse.sessions import ConfiguredRequestsSession
 from arcosparse.utils import deprecated, run_concurrently
 
+DEFAULT_COLUMNS_RENAME = {
+    "platform_id": "entity_id",
+    "platform_type": "entity_type",
+}
+
 
 def _subset(
     minimum_latitude: Optional[float],
@@ -35,7 +40,9 @@ def _subset(
     url_metadata: str,
     output_path: Optional[Path],
     disable_progress_bar: bool,
+    columns_rename: Optional[dict[str, str]],
 ) -> Optional[pd.DataFrame]:
+    columns_rename = _set_columns_rename(columns_rename)
     request = UserRequest(
         time=RequestedCoordinate(
             minimum=minimum_time, maximum=maximum_time, coordinate_id="time"
@@ -109,6 +116,7 @@ def _subset(
                     user_configuration,
                     output_filepath,
                     vertical_axis,
+                    columns_rename,
                 )
             )
     results = [
@@ -147,6 +155,7 @@ def subset_and_save(
     output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
+    columns_rename: Optional[dict[str, str]] = None,
 ) -> None:
     """
     Parameters
@@ -181,6 +190,29 @@ def subset_and_save(
         The user configuration to use for the requests.
     disable_progress_bar: Optional[bool], default=False
         Disable the progress bar.
+    columns_rename: Optional[dict[str, str]], default=None
+        The columns to rename in the resulting dataframe. Setting two columns with the same name will raise the follwing error:
+        "ValueError: Duplicate column names found"
+
+    Returns
+    -------
+
+    None, parquet file saved in the output_path.
+        The subsetted data in a parquet partitioned folder.
+        By default the columns names are:
+        'entity_id'
+        'entity_type'
+        'time'
+        'latitude'
+        'longitude'
+        'elevation'
+        'is_approx_elevation'
+        'value'
+        'value_qc'
+        'variable'
+
+        Can be renamed using the columns_rename parameter.
+        Also, 'elevation' will be renamed to 'depth' if vertical_axis is set to 'depth'.
 
     To open the result in pandas:
 
@@ -233,6 +265,7 @@ def subset_and_save(
         url_metadata=url_metadata,
         output_path=output_path,
         disable_progress_bar=disable_progress_bar,
+        columns_rename=columns_rename,
     )
 
 
@@ -251,6 +284,7 @@ def subset_and_return_dataframe(
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     user_configuration: UserConfiguration = UserConfiguration(),
     disable_progress_bar: bool = False,
+    columns_rename: Optional[dict[str, str]] = None,
 ) -> pd.DataFrame:
     """
     Parameters
@@ -283,6 +317,30 @@ def subset_and_return_dataframe(
         The user configuration to use for the requests.
     disable_progress_bar: Optional[bool], default=False
         Disable the progress bar.
+    columns_rename: Optional[dict[str, str]], default=None
+        The columns to rename in the resulting dataframe. Setting two columns with the same name will raise the follwing error:
+        "ValueError: Duplicate column names found"
+
+    Returns
+    -------
+
+    pd.DataFrame
+        The subsetted data in a pandas DataFrame.
+        By default the columns names are:
+        'entity_id'
+        'entity_type'
+        'time'
+        'latitude'
+        'longitude'
+        'elevation'
+        'is_approx_elevation'
+        'value'
+        'value_qc'
+        'variable'
+
+        Can be renamed using the columns_rename parameter.
+        Also, 'elevation' will be renamed to 'depth' if vertical_axis is set to 'depth'.
+
     """  # noqa
     df = _subset(
         url_metadata=url_metadata,
@@ -300,6 +358,7 @@ def subset_and_return_dataframe(
         user_configuration=user_configuration,
         output_path=None,
         disable_progress_bar=disable_progress_bar,
+        columns_rename=columns_rename,
     )
     if df is None:
         return pd.DataFrame()
@@ -368,3 +427,19 @@ def _get_metadata(
             }
 
         return metadata_item, platforms_metadata
+
+
+def _set_columns_rename(
+    columns_rename: Optional[dict[str, str]],
+) -> dict[str, str]:
+    if not columns_rename:
+        return DEFAULT_COLUMNS_RENAME
+    for key, value in DEFAULT_COLUMNS_RENAME.items():
+        if key in columns_rename:
+            del columns_rename[key]
+        if value in columns_rename:
+            columns_rename[key] = columns_rename[value]
+            del columns_rename[value]
+            continue
+        columns_rename[key] = value
+    return columns_rename
