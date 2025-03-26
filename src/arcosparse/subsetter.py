@@ -1,4 +1,3 @@
-from copy import deepcopy
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -22,9 +21,6 @@ from arcosparse.utils import deprecated, run_concurrently
 DEFAULT_COLUMNS_RENAME = {
     "platform_id": "entity_id",
     "platform_type": "entity_type",
-}
-ARTIFICIAL_COLUMNS_NAMES = {
-    value: key for key, value in DEFAULT_COLUMNS_RENAME.items()
 }
 
 
@@ -438,12 +434,12 @@ def _set_columns_rename(
 ) -> dict[str, str]:
     if not columns_rename:
         return DEFAULT_COLUMNS_RENAME
-    columns_rename_updated = deepcopy(DEFAULT_COLUMNS_RENAME)
-    for key, value in columns_rename.items():
-        if key in DEFAULT_COLUMNS_RENAME:
+    for key, value in DEFAULT_COLUMNS_RENAME.items():
+        if key in columns_rename:
+            del columns_rename[key]
+        if value in columns_rename:
+            columns_rename[key] = columns_rename[value]
+            del columns_rename[value]
             continue
-        if key in ARTIFICIAL_COLUMNS_NAMES:
-            columns_rename_updated[ARTIFICIAL_COLUMNS_NAMES[key]] = value
-        else:
-            columns_rename_updated[key] = value
-    return columns_rename_updated
+        columns_rename[key] = value
+    return columns_rename
