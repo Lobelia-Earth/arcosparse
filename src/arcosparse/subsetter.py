@@ -136,7 +136,7 @@ def _subset(
         return None
     if not results:
         return pd.DataFrame()
-    return pd.concat(results)
+    return pd.concat(results, ignore_index=True)
 
 
 def subset_and_save(
