@@ -59,21 +59,25 @@ def download_and_convert_to_pandas(
                 ]
             )
         with tempfile.NamedTemporaryFile(
-            suffix=".sqlite", delete=True
+            suffix=".sqlite", delete=False
         ) as temp_file:
             temp_file.write(response.content)
             temp_file.flush()
+        try:
             with sqlite3.connect(temp_file.name) as connection:
                 df = pd.read_sql(query, connection)
                 df["variable"] = variable_id
                 df.dropna(axis=1, inplace=True)
                 if df.empty:
-                    return None
-                if vertical_axis == "depth" and "elevation" in df.columns:
-                    df["elevation"] = -df["elevation"]
-                    columns_rename["elevation"] = "depth"
-                df.rename(columns=columns_rename, inplace=True)
-                if output_path:
+                    df = None
+                else:
+                    if vertical_axis == "depth" and "elevation" in df.columns:
+                        df["elevation"] = -df["elevation"]
+                        columns_rename["elevation"] = "depth"
+                    df.rename(columns=columns_rename, inplace=True)
+                if output_path and df is not None:
                     df.to_parquet(output_path)
-                    return None
+                    df = None
+        finally:
+            Path(temp_file.name).unlink()
         return df

@@ -1,3 +1,4 @@
+import calendar
 import concurrent.futures
 import functools
 from datetime import datetime
@@ -39,7 +40,8 @@ def run_concurrently(
 def date_to_timestamp(date: Union[str, float]) -> float:
     if isinstance(date, float) or isinstance(date, int):
         return date
-    return datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ").timestamp()
+    dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
+    return calendar.timegm(dt.timetuple())
 
 
 def deprecated(replacement: Optional[Callable] = None) -> Callable:
