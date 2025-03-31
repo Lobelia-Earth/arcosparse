@@ -2,6 +2,10 @@
 
 ## Changelog
 
+### 0.3.2
+
+- Fixes an issue on Windows where deleting a file is not permited if we don't close explicitly the sql connection.
+
 ### 0.3.1
 
 - Reindex when concatenate. Fixes issue when indexes wouldn't be unique.
