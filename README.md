@@ -5,7 +5,7 @@
 ### 0.3.1
 
 - Reindex when concatenate. Fixes issue when indexes wouldn't be unique.
-= Fixes an issue on Windows where `datetime.to_timestamp` does not support dates before 1970-1-1 (i.e. negative values for timestamps).
+- Fixes an issue on Windows where `datetime.to_timestamp` does not support dates before 1970-1-1 (i.e. negative values for timestamps).
 - Fixes an issue on Windows where a temporary sqlite file cannot be opened while it's already open in the process.
 
 ### 0.3.0
