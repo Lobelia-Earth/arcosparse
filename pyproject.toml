@@ -6,6 +6,7 @@ authors = [{name = "renaudjester",  email = "renaud.jester@lobelia.earth"}, {nam
 readme = "README.md"
 requires-python = ">=3.9"
 packages = [{include = "src/arcosparse", from = "src"}]
+license = {text = "GPLv3"}
 
 [tool.poetry.dependencies]
 python = ">=3.9"
