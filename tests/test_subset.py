@@ -57,3 +57,20 @@ class TestSubsetting:
         assert df is not None
         assert not df.empty
         assert len(df.index) == len(set(df.index)) == 41452
+
+    def test_can_request_with_limits_outside_extent(self):
+        df = subset_and_return_dataframe(
+            url_metadata=URL_METADATA,
+            minimum_latitude=REQUEST.latitude.minimum,
+            maximum_latitude=REQUEST.latitude.maximum,
+            minimum_longitude=REQUEST.longitude.minimum,
+            maximum_longitude=REQUEST.longitude.maximum,
+            minimum_time=-5063996800,  # real min time is -4063996800
+            maximum_time=-4053996800,
+            minimum_elevation=REQUEST.elevation.minimum,
+            maximum_elevation=REQUEST.elevation.maximum,
+            variables=REQUEST.variables,
+        )
+        assert df is not None
+        assert not df.empty
+        assert min(df["time"]) > -4063996800
