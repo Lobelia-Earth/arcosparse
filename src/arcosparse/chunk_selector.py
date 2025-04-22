@@ -126,10 +126,16 @@ def _get_chunks_to_download(
                 if requested_subset:
                     output_coordinates.append(
                         OutputCoordinate(
-                            minimum=requested_subset.minimum
-                            or coordinate.minimum,
-                            maximum=requested_subset.maximum
-                            or coordinate.maximum,
+                            minimum=(
+                                requested_subset.minimum
+                                if requested_subset.minimum is not None
+                                else coordinate.minimum
+                            ),
+                            maximum=(
+                                requested_subset.maximum
+                                if requested_subset.maximum is not None
+                                else coordinate.maximum
+                            ),
                             coordinate_id=coordinate.coordinate_id,
                         )
                     )
