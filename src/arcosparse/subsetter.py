@@ -16,7 +16,7 @@ from arcosparse.models import (
     UserRequest,
 )
 from arcosparse.sessions import ConfiguredRequestsSession
-from arcosparse.utils import deprecated, run_concurrently
+from arcosparse.utils import run_concurrently
 
 DEFAULT_COLUMNS_RENAME = {
     "platform_id": "entity_id",
@@ -395,14 +395,6 @@ def get_entities_ids(
     if platforms_metadata is None:
         return []
     return list(platforms_metadata.keys())
-
-
-@deprecated(get_entities_ids)
-def get_platforms_names(
-    url_metadata: str,
-    user_configuration: UserConfiguration = UserConfiguration(),
-):
-    pass
 
 
 def _get_metadata(

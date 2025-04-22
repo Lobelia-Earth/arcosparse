@@ -2,6 +2,11 @@
 
 ## Changelog
 
+### 0.3.4
+
+- Deleted deprecated `get_platforms_names` function
+- Fix an issue when query on the chunk would not be correct if the requested subset is 0.
+
 ### 0.3.3
 
 - Add GPLv3 license
