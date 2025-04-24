@@ -1,6 +1,37 @@
 # arcosparse: A Python library for ARCO sparse datasets subsetting
 
+## Usage
+
+### Main functions
+
+#### `arcosparse.subset_and_return_dataframe`
+
+Subset the data based on the input and return a dataframe.
+
+#### `arcosparse.subset_and_save`
+
+Subset the data based on the input and return data as a partitioned `parquet` file.
+It means that the data is saved in one folder and in this folder there are many small `parquet` files. Though, you can open all the data at once.
+
+To open the data into a dataframe, use this snippet:
+
+``` python
+import glob
+
+output_path = "some_folder" 
+
+# Get all partitioned Parquet files
+parquet_files = glob.glob(f"{output_path}/*.parquet")
+
+# # Read all files into a single dataframe
+df = pd.concat(pd.read_parquet(file) for file in parquet_files)
+```
+
 ## Changelog
+
+### 0.3.5
+
+- Return all the columns even if full of NaNs.
 
 ### 0.3.4
 

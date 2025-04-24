@@ -84,7 +84,14 @@ if __name__ == "__main__":
     )
 
     # open parquet file
-    df = pd.read_parquet("todelete")
+    import glob
+
+    # Get all partitioned Parquet files
+    parquet_files = glob.glob(f"{output_path}/*.parquet")
+
+    # # Read all files into a single dataframe
+    df = pd.concat(pd.read_parquet(file) for file in parquet_files)
+
     print(df)
     try:
         print(df["elevation"])
