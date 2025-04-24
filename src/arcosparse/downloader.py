@@ -68,7 +68,6 @@ def download_and_convert_to_pandas(
                 df = pd.read_sql(query, connection)
             connection.close()
             df["variable"] = variable_id
-            df.dropna(axis=1, inplace=True)
             if df.empty:
                 df = None
             else:

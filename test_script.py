@@ -53,7 +53,7 @@ if __name__ == "__main__":
     # 2024-12-12 06:52:43     147456 14.0.0.0.sqlite
     # 2024-12-16 08:58:00     258048 15.0.0.0.sqlite
     # 2024-12-18 19:49:59      77824 16.0.0.0.sqlite
-    _subset(
+    df = _subset(
         minimum_latitude=request.latitude.minimum,
         maximum_latitude=request.latitude.maximum,
         minimum_longitude=request.longitude.minimum,
@@ -84,7 +84,14 @@ if __name__ == "__main__":
     )
 
     # open parquet file
-    df = pd.read_parquet("todelete")
+    import glob
+
+    # # Get all partitioned Parquet files
+    parquet_files = glob.glob(f"{output_path}/*.parquet")
+
+    # # Read all files into a single dataframe
+    df = pd.concat(pd.read_parquet(file) for file in parquet_files)
+
     print(df)
     try:
         print(df["elevation"])
