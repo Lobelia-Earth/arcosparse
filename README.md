@@ -29,6 +29,10 @@ df = pd.concat(pd.read_parquet(file) for file in parquet_files)
 
 ## Changelog
 
+### 0.3.5
+
+- Return all the columns even if full of NaNs.
+
 ### 0.3.4
 
 - Deleted deprecated `get_platforms_names` function
