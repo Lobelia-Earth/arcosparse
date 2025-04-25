@@ -403,14 +403,14 @@ def get_entities(
     all_entities = []
     if platforms_metadata is None or "platforms" not in platforms_metadata:
         return []
-    insitution_mapping = platforms_metadata.get("dicts", {}).get("inst", {})
+    institution_mapping = platforms_metadata.get("dicts", {}).get("inst", {})
     doi_mapping = platforms_metadata.get("dicts", {}).get("doi", {})
     for platform_id, platform_info in platforms_metadata["platforms"].items():
         all_entities.append(
             Entity(
                 entity_id=platform_id,
                 entity_type=platform_info.get("ptype"),
-                institution=insitution_mapping.get(
+                institution=institution_mapping.get(
                     platform_info.get("inst"), None
                 ),
                 doi=doi_mapping.get(platform_info.get("doi"), None),

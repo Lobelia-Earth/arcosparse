@@ -37,7 +37,7 @@ A function to get the metadata about the entities that are available in the data
 Returns a list of `Entity`: class that can be easily imported from the arcosparse module `from arcosparse import Entity`. It contains information about the entities available in the dataset:
 
 - `entity_id`: same as the `entity_id` column in the result of a subset.
-- `entity_type`: same as the `entitye_type` column in the result of a subset.
+- `entity_type`: same as the `entity_type` column in the result of a subset.
 - `doi`: the DOI of the entity.
 - `institution`: the institution associated with the entity.
 
