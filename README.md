@@ -1,5 +1,8 @@
 # arcosparse: A Python library for ARCO sparse datasets subsetting
 
+> [!WARNING]
+> This library is still in development. Breaking changes might be introduced from version `0.y.z` to `0.y+1.z`.
+
 ## Usage
 
 ### Main functions
@@ -27,9 +30,38 @@ parquet_files = glob.glob(f"{output_path}/*.parquet")
 df = pd.concat(pd.read_parquet(file) for file in parquet_files)
 ```
 
+#### `arcosparse.get_entities`
+
+A function to get the metadata about the entities that are available in the dataset. Since all the information are retrieved from the metadata, the argument is the `url_metadata`, the same used for the subset.
+
+Returns a list of `Entity`: class that can be easily imported from the arcosparse module `from arcosparse import Entity`. It contains information about the entities available in the dataset:
+
+- `entity_id`: same as the `entity_id` column in the result of a subset.
+- `entity_type`: same as the `entitye_type` column in the result of a subset.
+- `doi`: the DOI of the entity.
+- `institution`: the institution associated with the entity.
+
 ## Changelog
 
-### 0.3.6
+### 0.4.0
+
+#### Breaking Changes
+
+- Deleted function `get_entities_ids`. Use `get_entities` as a replacement. Example:
+
+``` python
+# old code
+my_entities = get_entities_ids(url_metadata)
+
+# new code
+my_entities = [entity.entity_id for entity in get_entities(url_metadata)]
+```
+
+#### New features
+
+- Added function `get_entities`. It returns a list of `Entity` objects.
+
+#### Bug fixes
 
 - Fix a bug where arcosparse would modify the dict that users input in the `columns_rename` argument. Now, it deepcopy it to modify it after that.
 

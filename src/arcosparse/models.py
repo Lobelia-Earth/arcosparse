@@ -247,3 +247,15 @@ class ChunksRanges:
     variable_id: str
     chunks_ranges: dict[str, tuple[int, int]]
     output_coordinates: list[OutputCoordinate]
+
+
+@dataclass
+class Entity:
+    """
+    Class used to store the information of the entity
+    """
+
+    entity_id: str
+    entity_type: str
+    institution: Optional[str]
+    doi: Optional[str]

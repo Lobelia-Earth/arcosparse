@@ -12,6 +12,7 @@ from arcosparse.chunk_selector import (
 from arcosparse.downloader import download_and_convert_to_pandas
 from arcosparse.logger import logger
 from arcosparse.models import (
+    Entity,
     RequestedCoordinate,
     UserConfiguration,
     UserRequest,
@@ -67,17 +68,22 @@ def _subset(
         platform_ids=platform_ids,
     )
     has_platform_ids_requested = bool(request.platform_ids)
-    metadata, platforms_metadata = _get_metadata(
+    metadata, raw_platforms_metadata = _get_metadata(
         url_metadata,
         user_configuration,
         has_platform_ids_requested,
     )
+    platforms_metadata: Optional[dict[str, str]] = None
     if has_platform_ids_requested:
-        if platforms_metadata is None:
+        if raw_platforms_metadata is None:
             # TODO: custom error
             raise ValueError(
                 "The requested dataset does not have platform information."
             )
+        platforms_metadata = {
+            key: value["chunking"]
+            for key, value in raw_platforms_metadata["platforms"].items()
+        }
         for platform_id in request.platform_ids:
             if platform_id not in platforms_metadata:
                 raise ValueError(
@@ -368,10 +374,10 @@ def subset_and_return_dataframe(
     return df
 
 
-def get_entities_ids(
+def get_entities(
     url_metadata: str,
     user_configuration: UserConfiguration = UserConfiguration(),
-) -> list[str]:
+) -> list[Entity]:
     """
     Retrieve the ids of the entities available in the dataset.
     You can use those ids to subset the data.
@@ -390,19 +396,34 @@ def get_entities_ids(
     list[str]
         The list of entities ids available in the dataset.
     """  # noqa
+
     _, platforms_metadata = _get_metadata(
         url_metadata, user_configuration, True
     )
-    if platforms_metadata is None:
+    all_entities = []
+    if platforms_metadata is None or "platforms" not in platforms_metadata:
         return []
-    return list(platforms_metadata.keys())
+    insitution_mapping = platforms_metadata.get("dicts", {}).get("inst", {})
+    doi_mapping = platforms_metadata.get("dicts", {}).get("doi", {})
+    for platform_id, platform_info in platforms_metadata["platforms"].items():
+        all_entities.append(
+            Entity(
+                entity_id=platform_id,
+                entity_type=platform_info.get("ptype"),
+                institution=insitution_mapping.get(
+                    platform_info.get("inst"), None
+                ),
+                doi=doi_mapping.get(platform_info.get("doi"), None),
+            )
+        )
+    return all_entities
 
 
 def _get_metadata(
     url_metadata: str,
     user_configuration: UserConfiguration,
     platform_ids_subset: bool,
-) -> tuple[pystac.Item, Optional[dict[str, str]]]:
+) -> tuple[pystac.Item, Optional[dict]]:
     with ConfiguredRequestsSession(
         user_configuration=user_configuration
     ) as session:
@@ -416,12 +437,8 @@ def _get_metadata(
                 return metadata_item, platforms_metadata
             result = session.get(platforms_asset.href)
             result.raise_for_status()
-            platforms_metadata = {
-                key: value["chunking"]
-                for key, value in result.json()["platforms"].items()
-            }
 
-        return metadata_item, platforms_metadata
+        return metadata_item, result.json()
 
 
 def _set_columns_rename(
