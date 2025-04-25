@@ -393,8 +393,17 @@ def get_entities(
     Returns
     -------
 
-    list[str]
-        The list of entities ids available in the dataset.
+    list[Entity]
+        The list of entities available in the dataset. Each entity is an object
+        with the following attributes:
+        - entity_id: str
+            The id of the entity.
+        - entity_type: str
+            The type of the entity.
+        - institution: str, optional
+            The institution of the entity.
+        - doi: str, optional
+            The doi of the entity.
     """  # noqa
 
     _, platforms_metadata = _get_metadata(
