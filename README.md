@@ -29,6 +29,10 @@ df = pd.concat(pd.read_parquet(file) for file in parquet_files)
 
 ## Changelog
 
+### 0.3.6
+
+- Fix a bug where arcosparse would modify the dict that users input in the `columns_rename` argument. Now, it deepcopy it to modify it after that.
+
 ### 0.3.5
 
 - Return all the columns even if full of NaNs.

@@ -1,3 +1,4 @@
+from copy import deepcopy
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -424,8 +425,9 @@ def _get_metadata(
 
 
 def _set_columns_rename(
-    columns_rename: Optional[dict[str, str]],
+    input_columns_rename: Optional[dict[str, str]],
 ) -> dict[str, str]:
+    columns_rename = deepcopy(input_columns_rename)
     if not columns_rename:
         return DEFAULT_COLUMNS_RENAME
     for key, value in DEFAULT_COLUMNS_RENAME.items():
