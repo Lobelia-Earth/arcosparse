@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from arcosparse import subset_and_return_dataframe
 from arcosparse.models import (
     UserConfiguration,
@@ -13,7 +15,7 @@ USER_CONFIGURATION = UserConfiguration(
 )
 
 
-REQUEST = {
+BASE_REQUEST = {
     "url_metadata": URL_METADATA,
     "minimum_latitude": -63.900001525878906,
     "maximum_latitude": 90.0,
@@ -35,18 +37,19 @@ REQUEST = {
 class TestSubsetting:
     def test_subsetting(self):
         df = subset_and_return_dataframe(
-            **REQUEST,
+            **BASE_REQUEST,
         )
         assert df is not None
         assert not df.empty
         assert len(df.index) == len(set(df.index)) == 41452
 
     def test_can_request_with_limits_outside_extent(self):
-        REQUEST["maximum_time"] = -4053996800
-        REQUEST["minimum_time"] = -5063996800
-        del REQUEST["entities"]
+        request = deepcopy(BASE_REQUEST)
+        request["maximum_time"] = -4053996800
+        request["minimum_time"] = -5063996800
+        del request["entities"]
         df = subset_and_return_dataframe(
-            **REQUEST,
+            **request,
         )
         assert df is not None
         assert not df.empty
@@ -54,7 +57,7 @@ class TestSubsetting:
 
     def test_can_get_depth_instead_of_elevation(self):
         df = subset_and_return_dataframe(
-            **REQUEST,
+            **BASE_REQUEST,
             vertical_axis="depth",
             columns_rename={
                 "entity_id": "platform_id",
@@ -67,7 +70,7 @@ class TestSubsetting:
 
     def test_can_explicit_elevation_and_rename(self):
         df = subset_and_return_dataframe(
-            **REQUEST,
+            **BASE_REQUEST,
             vertical_axis="elevation",
             columns_rename={
                 "entity_id": "platform_id",
