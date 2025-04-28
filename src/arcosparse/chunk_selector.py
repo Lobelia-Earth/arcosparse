@@ -1,6 +1,6 @@
 import math
 from itertools import product
-from typing import Literal, Optional
+from typing import Optional
 
 import pystac
 
@@ -8,6 +8,7 @@ from arcosparse.logger import logger
 from arcosparse.models import (
     CHUNK_INDEX_INDICES,
     Asset,
+    AssetsNames,
     ChunksRanges,
     ChunkType,
     Coordinate,
@@ -68,16 +69,14 @@ def select_best_asset_and_get_chunks(
 def _get_chunks_to_download(
     metadata: pystac.Item,
     request: UserRequest,
-    asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
+    asset_name: AssetsNames,
     platforms_metadata: Optional[dict[str, str]] = None,
 ) -> tuple[list[ChunksRanges], str, int]:
     """
     Given the asset name, returns the chunks to download
     and the url, as well as the total number of chunks.
     """
-    asset = Asset.from_metadata_item(
-        metadata, request.variables, asset_name, platforms_metadata
-    )
+    asset = Asset.from_metadata_item(metadata, request.variables, asset_name)
     chunks_to_download: list[ChunksRanges] = []
     total_number_of_chunks = 0
     for platform_id in request.platform_ids or [None]:

@@ -12,6 +12,10 @@ from arcosparse.chunk_selector import (
 from arcosparse.downloader import download_and_convert_to_pandas
 from arcosparse.logger import logger
 from arcosparse.models import (
+    ASSETS_NAMES,
+    Asset,
+    AssetsNames,
+    Dataset,
     Entity,
     RequestedCoordinate,
     UserConfiguration,
@@ -426,6 +430,51 @@ def get_entities(
             )
         )
     return all_entities
+
+
+def get_dataset_metadata(
+    url_metadata: str,
+    user_configuration: UserConfiguration = UserConfiguration(),
+) -> Dataset:
+    """
+    Retrieve the metadata of the dataset.
+
+    Parameters
+    ----------
+    url_metadata: str
+        The URL to the STAC metadata. It will be parsed and use to do the subsetting.
+    user_configuration: Optional[arcosparse.UserConfiguration], default=arcosparse.UserConfiguration()
+        The user configuration to use for the requests.
+
+    Returns
+    -------
+    Dataset
+        The metadata of the dataset. See the Dataset class for more details.
+    """  # noqa
+
+    metadata_item, _ = _get_metadata(url_metadata, user_configuration, False)
+    assets = metadata_item.get_assets()
+    assets_names: list[AssetsNames] = [
+        asset_name
+        for asset_name in assets.keys()
+        if asset_name in ASSETS_NAMES
+    ]  # type: ignore
+    if not assets_names:
+        raise ValueError(
+            "No assets found in the metadata. "
+            "Please check the metadata URL."
+        )
+    variables = list(metadata_item.properties.get("cube:variables", {}).keys())
+    example_asset = Asset.from_metadata_item(
+        metadata_item,
+        variables,
+        assets_names[0],  # type: ignore
+    )
+
+    return example_asset.to_dataset(
+        asset_names=assets_names,
+        dataset_id=metadata_item.id,
+    )  # type: ignore
 
 
 def _get_metadata(
