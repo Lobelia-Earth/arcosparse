@@ -213,7 +213,9 @@ class Asset:
                     all_coordinates.append(coordinate.to_dataset_coordinate())
         return Dataset(
             dataset_id=dataset_id,
-            variables=[variable.variable_id for variable in self.variables],
+            variables=sorted(
+                [variable.variable_id for variable in self.variables]
+            ),
             assets=asset_names,
             coordinates=all_coordinates,
         )
