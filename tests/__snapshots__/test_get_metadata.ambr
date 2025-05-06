@@ -9,7 +9,7 @@
     'coordinates': list([
       dict({
         'coordinate_id': 'time',
-        'maximum': 1743465540,
+        'maximum': 1746057540,
         'minimum': -4063996800,
         'step': None,
         'unit': 'ISO8601',

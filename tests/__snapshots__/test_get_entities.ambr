@@ -50047,6 +50047,18 @@
       'entity_type': 'GL',
       'institution': 'Scottish Association for Marine Science',
     }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': 'LGIZ___BO',
+      'entity_type': 'BO',
+      'institution': 'University of Tromsø',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': '6301524___DB',
+      'entity_type': 'DB',
+      'institution': 'Unknown institution',
+    }),
   ])
 # ---
 # name: TestGetEntities.test_get_entities[url2]
