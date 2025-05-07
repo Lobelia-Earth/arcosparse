@@ -33,7 +33,7 @@ df = pd.concat(pd.read_parquet(file) for file in parquet_files)
 #### `arcosparse.get_entities`
 
 A function to get the metadata about the entities that are available in the dataset. Since all the information is retrieved from the metadata, the argument is the `url_metadata`, the same used for the subset.
-Returns a list of `arosparse.Entity`. It contains information about the entities available in the dataset:
+Returns a list of `arcosparse.Entity`. It contains information about the entities available in the dataset:
 
 - `entity_id`: same as the `entity_id` column in the result of a subset.
 - `entity_type`: same as the `entity_type` column in the result of a subset.
