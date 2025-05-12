@@ -1,10 +1,13 @@
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Literal, Optional, Type, TypeVar, Union
+from typing import Literal, Optional, Type, TypeVar, Union, get_args
 
 import pystac
 
 from arcosparse.utils import date_to_timestamp
+
+AssetsNames = Literal["timeChunked", "geoChunked", "platformChunked"]
+ASSETS_NAMES = list(get_args(AssetsNames))
 
 
 class ChunkType(str, Enum):
@@ -13,6 +16,34 @@ class ChunkType(str, Enum):
 
 
 Coordinate_type = TypeVar("Coordinate_type", bound="Coordinate")
+
+
+@dataclass
+class DatasetCoordinate:
+    """
+    External class to store the metadata of the dataset
+    and return it to the user.
+    """
+
+    coordinate_id: str
+    unit: str
+    minimum: Optional[float]
+    maximum: Optional[float]
+    step: Optional[float]
+    values: Optional[list[float]]
+
+
+@dataclass
+class Dataset:
+    """
+    External class to store the metadata of the dataset
+    and return it to the user.
+    """
+
+    dataset_id: str
+    variables: list[str]
+    assets: list[AssetsNames]
+    coordinates: list[DatasetCoordinate]
 
 
 @dataclass
@@ -62,6 +93,19 @@ class Coordinate:
             chunk_type=ChunkType(view_dim.get("chunkType", "default")),
             chunk_reference_coordinate=view_dim.get("chunkRefCoord"),
             chunk_geometric_factor=geometric_factor,
+        )
+
+    def to_dataset_coordinate(self) -> DatasetCoordinate:
+        """
+        This is useful for returning the metadata to the user.
+        """
+        return DatasetCoordinate(
+            coordinate_id=self.coordinate_id,
+            unit=self.unit,
+            minimum=self.minimum,
+            maximum=self.maximum,
+            step=self.step,
+            values=self.values,
         )
 
 
@@ -114,7 +158,7 @@ class Asset:
     Only loading the variables needed
     """
 
-    asset_id: Literal["timeChunked", "geoChunked", "platformChunked"]
+    asset_id: AssetsNames
     url: str
     variables: list[Variable]
 
@@ -123,8 +167,7 @@ class Asset:
         cls: Type[Asset_type],
         item: pystac.Item,
         variables: list[str],
-        asset_name: Literal["timeChunked", "geoChunked", "platformChunked"],
-        platforms_metadata: Optional[dict],
+        asset_name: AssetsNames,
     ) -> Asset_type:
         assets = item.get_assets()
         variable_info = item.properties.get("cube:variables", {})
@@ -153,18 +196,30 @@ class Asset:
             ],
         )
 
+    def to_dataset(
+        self,
+        asset_names: list[AssetsNames],
+        dataset_id: str,
+    ) -> Dataset:
+        """
+        This is useful for returning the metadata to the user.
+        """
+        coordinates_done = set()
+        all_coordinates: list[DatasetCoordinate] = []
+        for variable in self.variables:
+            for coordinate in variable.coordinates:
+                if coordinate.coordinate_id not in coordinates_done:
+                    coordinates_done.add(coordinate.coordinate_id)
+                    all_coordinates.append(coordinate.to_dataset_coordinate())
+        return Dataset(
+            dataset_id=dataset_id,
+            variables=sorted(
+                [variable.variable_id for variable in self.variables]
+            ),
+            assets=asset_names,
+            coordinates=all_coordinates,
+        )
 
-SQL_FIELDS = [
-    "platform_id",
-    "platform_type",
-    "time",
-    "longitude",
-    "latitude",
-    "elevation",
-    "pressure",
-    "value",
-    "value_qc",
-]
 
 SQL_COLUMNS = {
     "platformId": 0,
@@ -176,7 +231,7 @@ SQL_COLUMNS = {
     "pressure": 6,
     "value": 7,
     "valueQc": 8,
-}
+}  # kept for information
 
 CHUNK_INDEX_INDICES = {
     "time": 0,

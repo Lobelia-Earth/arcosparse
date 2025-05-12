@@ -1,6 +1,6 @@
 [project]
 name = "arcosparse"
-version = "0.4.0"
+version = "0.4.1"
 description = "Helper to download and subset sparse data that has been Arcoified and are available through STAC and sqlite formated data"
 authors = [{name = "renaudjester",  email = "renaud.jester@lobelia.earth"}, {name = "Lobelia", email = "developer@lobelia.earth"}]
 readme = "README.md"
@@ -24,6 +24,7 @@ flake8 = "^7.1.1"
 bandit = "^1.8.2"
 pyright = "^1.1.391"
 pytest = "^8.3.4"
+syrupy = "^4.9.1"
 
 
 [build-system]

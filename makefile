@@ -41,3 +41,6 @@ bump-version-minor: ## Bump version minor
 bump-version-major: ## Bump version major
 	poetry version major
 
+update-snapshots: ## Update snapshot
+	poetry run python -m pytest --snapshot-update tests/test_get_entities.py
+	poetry run python -m pytest --snapshot-update tests/test_get_metadata.py

@@ -33,14 +33,37 @@ df = pd.concat(pd.read_parquet(file) for file in parquet_files)
 #### `arcosparse.get_entities`
 
 A function to get the metadata about the entities that are available in the dataset. Since all the information is retrieved from the metadata, the argument is the `url_metadata`, the same used for the subset.
-Returns a list of `Entity`: class that can be easily imported from the arcosparse module `from arcosparse import Entity`. It contains information about the entities available in the dataset:
+Returns a list of `arcosparse.Entity`. It contains information about the entities available in the dataset:
 
 - `entity_id`: same as the `entity_id` column in the result of a subset.
 - `entity_type`: same as the `entity_type` column in the result of a subset.
 - `doi`: the DOI of the entity.
 - `institution`: the institution associated with the entity.
 
+#### `arcosparse.get_dataset_metadata`
+
+A function to get the metadata about the dataset. Since all the information is retrieved from the metadata, the argument is the `url_metadata`, the same used for the subset.
+
+Returns an object `arcosparse.Dataset`. It contains information about the dataset:
+
+- `dataset_id`: the ID of the dataset.
+- `variables`: a list of the names of the variables available in the dataset.
+- `assets`: a list of the names of the assets available in the dataset.
+- `coordinates`: a list of `arcosparse.DatasetCoordinate` objects. Each object contains the following information:
+  - `coordinate_id`: the ID of the coordinate.
+  - `unit`: the unit of the coordinate.
+  - `minimum`: the minimum value of the coordinate.
+  - `maximum`: the maximum value of the coordinate.
+  - `step`: the step of the coordinate.
+  - `values`: the values of the coordinate.
+
 ## Changelog
+
+### 0.4.1
+
+#### 0.4.1: New features
+
+- Added function `get_dataset_metadata`. It returns an `arcosparse.Dataset` object.
 
 ### 0.4.0
 
