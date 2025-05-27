@@ -37,11 +37,12 @@ def run_concurrently(
     return out
 
 
-def date_to_timestamp(date: Union[str, float]) -> float:
+def date_to_timestamp(date: Union[str, float], time_unit: str) -> float:
     if isinstance(date, float) or isinstance(date, int):
         return date
     dt = datetime.strptime(date, "%Y-%m-%dT%H:%M:%SZ")
-    return calendar.timegm(dt.timetuple())
+    conversion_factor = 1000 if "milliseconds" in time_unit else 1
+    return calendar.timegm(dt.timetuple()) * conversion_factor
 
 
 def deprecated(replacement: Optional[Callable] = None) -> Callable:

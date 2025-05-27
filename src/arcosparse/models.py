@@ -67,6 +67,7 @@ class Coordinate:
         asset: dict,
         coordinate_id: str,
         variable_id: str,
+        time_unit: str,
     ) -> Coordinate_type:
         view_dim = asset.get("viewDims", {}).get(coordinate_id, {})
         coordinate_information = view_dim.get("coords", {})
@@ -80,15 +81,27 @@ class Coordinate:
         # TODO: check validStartDate can be an int? if the time is timestamps
         # TODO: check if we can values or never with insitus?
         return cls(
-            minimum=date_to_timestamp(
-                coordinate_information.get("validStartDate")
-                or coordinate_information["min"]
+            minimum=(
+                date_to_timestamp(
+                    coordinate_information.get("validStartDate")
+                    or coordinate_information["min"],
+                    time_unit,
+                )
+                if coordinate_id == "time"
+                else coordinate_information["min"]
             ),
-            maximum=date_to_timestamp(coordinate_information["max"]),
+            maximum=(
+                date_to_timestamp(
+                    coordinate_information["max"],
+                    time_unit,
+                )
+                if coordinate_id == "time"
+                else coordinate_information["max"]
+            ),
             step=coordinate_information["step"],
             values=coordinate_information.get("values"),
             coordinate_id=coordinate_id,
-            unit=view_dim["units"],
+            unit=time_unit if coordinate_id == "time" else view_dim["units"],
             chunk_length=chunk_length,
             chunk_type=ChunkType(view_dim.get("chunkType", "default")),
             chunk_reference_coordinate=view_dim.get("chunkRefCoord"),
@@ -132,6 +145,7 @@ class Variable:
         asset: dict,
         variable_id: str,
         variable_info: dict,
+        time_unit: str,
     ) -> Variable_type:
         unit = variable_info.get("unit", None)
         return cls(
@@ -141,6 +155,7 @@ class Variable:
                     asset,
                     coordinate_id=coordinate_id,
                     variable_id=variable_id,
+                    time_unit=time_unit,
                 )
                 for coordinate_id in asset.get("viewDims", {}).keys()
             ],
@@ -171,6 +186,12 @@ class Asset:
     ) -> Asset_type:
         assets = item.get_assets()
         variable_info = item.properties.get("cube:variables", {})
+        time_unit = (
+            item.properties.get("cube:dimensions", {})
+            .get("time", {})
+            .get("cube_units", "seconds since 1970-01-01 00:00:00")
+        )
+
         if not assets or asset_name not in assets:
             raise ValueError(f"Asset {asset_name} not found in the metadata")
         asset = assets[asset_name].to_dict()
@@ -191,6 +212,7 @@ class Asset:
                     asset,
                     variable_id=variable_name,
                     variable_info=variable_info.get(variable_name, {}),
+                    time_unit=time_unit,
                 )
                 for variable_name in variables_to_parse
             ],
