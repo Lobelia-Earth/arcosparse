@@ -1,10 +1,11 @@
-from dateutil.parser._parser import ParserError
+import pytest
+from dateutil.parser import ParserError
 
 from arcosparse.subsetter import DEFAULT_COLUMNS_RENAME, _set_columns_rename
 from arcosparse.utils import date_to_timestamp
 
 
-class TestUtilityFonctions:
+class TestUtilityFunctions:
     def test_set_columns_rename(self):
         columns_rename_none = None
         columns_rename_empty = {}
@@ -64,7 +65,5 @@ class TestUtilityFonctions:
         # Failure cases
         date = "lksdhflk"
 
-        try:
+        with pytest.raises(ParserError):
             date_to_timestamp(date, "seconds")
-        except ParserError:
-            assert True

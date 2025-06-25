@@ -5,7 +5,7 @@ from datetime import datetime
 from typing import Any, Callable, Optional, Sequence, TypeVar, Union
 
 from dateutil import parser as dateutil_parser
-from dateutil.parser._parser import ParserError
+from dateutil.parser import ParserError
 from tqdm import tqdm
 
 from arcosparse.logger import logger
@@ -41,8 +41,8 @@ def run_concurrently(
 
 def date_to_timestamp(date: Union[str, float], time_unit: str) -> float:
     """
-    Warning: If the input date is a float or int, it won't be converted to the inputed time unit.
-    """
+    Warning: If the input date is a float or int, it won't be converted to the input time unit.
+    """  # noqa: E501
     if isinstance(date, float) or isinstance(date, int):
         return date
     dt = datetime_parser(date)
@@ -53,9 +53,9 @@ def date_to_timestamp(date: Union[str, float], time_unit: str) -> float:
 def datetime_parser(date: str) -> datetime:
     try:
         return dateutil_parser.parse(date)
-    except ParserError as e:
+    except ParserError:
         logger.error(f"Failed to parse date: {date}")
-        raise e
+        raise
 
 
 def deprecated(replacement: Optional[Callable] = None) -> Callable:
