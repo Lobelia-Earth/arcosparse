@@ -59,6 +59,12 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
 
 ## Changelog
 
+### 0.4.2
+
+#### 0.4.2: Bug fixes
+
+- Fix a bug where dates in the metadata like "2025-06-25T07:43:54.514180Z" would not be parsed and raised an error. Now, it uses `dateutil.parser` to parse the date strings correctly.
+
 ### 0.4.1
 
 #### 0.4.1: New features
