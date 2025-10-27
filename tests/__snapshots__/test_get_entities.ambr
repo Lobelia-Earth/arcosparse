@@ -6632,6 +6632,12 @@
       'institution': 'Environment and Climate Change Canada Climate Research Division',
     }),
     dict({
+      'doi': '10.21334/npolar.2024.92445174',
+      'entity_id': 'Amundsen-22___MO',
+      'entity_type': 'MO',
+      'institution': 'Norwegian Polar Institute',
+    }),
+    dict({
       'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
       'entity_id': '6903760___PF',
       'entity_type': 'PF',
