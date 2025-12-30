@@ -126,3 +126,15 @@ class TestChunkSelector:
         )
         assert index_min == 0
         assert index_max == 0
+
+    def test_basic_num_overflow_chunks_test(self):
+        from arcosparse.chunk_selector import get_full_chunks_names
+
+        input_dict = {
+            "longitude": (4, 7),
+            "time": (0, 0),
+            "elevation": (0, 1),
+            "latitude": (0, 0),
+        }
+        out = get_full_chunks_names(input_dict, num_overflow_chunks=1)
+        assert "0.0.7.0-1" in out
