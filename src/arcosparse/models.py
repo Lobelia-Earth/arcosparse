@@ -324,7 +324,6 @@ class ChunksRanges:
     variable_id: str
     chunks_ranges: dict[str, tuple[int, int]]
     output_coordinates: list[OutputCoordinate]
-    num_overflow_chunks: Optional[int]
 
 
 @dataclass

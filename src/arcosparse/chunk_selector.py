@@ -247,7 +247,6 @@ def _get_chunks_index_geometric(
 # TODO: unit test for this
 def get_full_chunks_names(
     chunks_indexes: dict[str, tuple[int, int]],
-    num_overflow_chunks: int = 0,
 ) -> set[str]:
     """
     Given a list of all the indexes for each coordinate, returns
@@ -275,13 +274,5 @@ def get_full_chunks_names(
     ranges = [
         range(start, end + 1) for _, (start, end) in sorted_chunks_indexes
     ]
-    if num_overflow_chunks > 0:
-        chunks = set()
-        for idxs in product(*ranges):
-            base = ".".join(str(i) for i in idxs)
-            for overflow in range(num_overflow_chunks + 1):
-                chunks.add(f"{base}-{overflow}")
-        return chunks
-    else:
-        combinations = product(*ranges)
-        return {".".join(str(i) for i in idxs) for idxs in combinations}
+    combinations = product(*ranges)
+    return {".".join(str(i) for i in idxs) for idxs in combinations}

@@ -102,7 +102,7 @@ def _subset(
         logger.debug(f"Downloading chunks for {chunks_range.variable_id}")
         # TODO: Maybe we should do this calculation per batches
         # it would allow for huge downloads and create bigger parquet files?
-        for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges, chunks_range.num_overflow_chunks):
+        for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges):
             if output_path:
                 if chunks_range.platform_id:
                     # TODO: maybe need a way to no overwrite the files

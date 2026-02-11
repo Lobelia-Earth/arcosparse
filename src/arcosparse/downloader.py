@@ -36,11 +36,6 @@ def download_and_convert_to_pandas(
         user_configuration=user_configuration
     ) as session:
         response = session.get(url_to_download)
-        # means that the chunk does not exist
-        if response.status_code == 403:
-            logger.debug(f"Chunk {chunk_name} does not exist")
-            return None
-        response.raise_for_status()
         # TODO: check that this is okay to save the file in a temporary file
         # else need to find a way to save it in memory
         # for this we need the encoding of the file:
@@ -49,19 +44,17 @@ def download_and_convert_to_pandas(
         # connection.executescript(database_content.read().decode('utf-8'))
         # OR use a thread safe csv writer:
         # https://stackoverflow.com/questions/33107019/multiple-threads-writing-to-the-same-csv-in-python # noqa
-        if (overflow_chunks := get_num_overflow_chunks(response)) > 0:
+        if (
+            overflow_chunks := get_num_overflow_chunks(response)
+        ) is not None and overflow_chunks > 0:
             df = pd.DataFrame()
-            for chunk in range(overflow_chunks):
+            for chunk in range(overflow_chunks + 1):
                 if chunk > 0:
                     overflow_url = f"{base_url}/{platform_id}/{variable_id}/{chunk_name}b{chunk}.sqlite"
                 else:
                     overflow_url = f"{base_url}/{platform_id}/{variable_id}/{chunk_name}.sqlite"
                 logger.debug(f"downloading overflow chunk {overflow_url}")
                 overflow_response = session.get(overflow_url)
-                if overflow_response.status_code == 403:
-                    logger.debug(f"Overflow chunk {chunk} does not exist")
-                    continue
-                overflow_response.raise_for_status()
                 overflow_df = read_query_from_sqlite_and_convert_to_df(
                     overflow_response,
                     output_coordinates,
@@ -71,7 +64,7 @@ def download_and_convert_to_pandas(
                     output_path,
                 )
                 logger.debug(f"Appending overflow chunk {chunk} to df")
-                if df is not None:
+                if overflow_df is not None:
                     df = pd.concat([df, overflow_df], ignore_index=True)
         else:
             return read_query_from_sqlite_and_convert_to_df(
@@ -82,6 +75,7 @@ def download_and_convert_to_pandas(
                 columns_rename,
                 output_path,
             )
+        return df
 
 
 def read_query_from_sqlite_and_convert_to_df(
@@ -91,7 +85,13 @@ def read_query_from_sqlite_and_convert_to_df(
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     columns_rename: dict[str, str] = {},
     output_path: Optional[Path] = None,
-) -> pd.DataFrame:
+) -> pd.DataFrame | None:
+    # means that the chunk does not exist
+    if response.status_code == 403:
+        logger.debug("Chunk does not exist")
+        return None
+    response.raise_for_status()
+
     query = "SELECT * FROM data"
     if output_coordinates:
         query += " WHERE "
