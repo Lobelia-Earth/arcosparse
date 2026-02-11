@@ -5,7 +5,7 @@ URL_METADATA_1 = "https://s3.waw3-1.cloudferro.com/mdl-arco-time-059/arco/INSITU
 
 
 class TestDownloader:
-    def test_downloader(self):
+    def test_downloader_with_metadata(self):
         df = download_and_convert_to_pandas(
             base_url=URL_METADATA_1,
             variable_id="EWCT",
@@ -20,3 +20,18 @@ class TestDownloader:
         assert df is not None
         assert not df.empty
         assert df.size > 62728000
+
+    def test_downloader_without_metadata(self):
+        df = download_and_convert_to_pandas(
+            base_url=URL_METADATA_1,
+            variable_id="EWCT",
+            chunk_name="0.0.0.0",
+            platform_id="FMCY___AD",
+            output_coordinates=[],
+            user_configuration=USER_CONFIGURATION,
+            output_path=None,
+            vertical_axis="depth",
+            columns_rename={},
+        )
+        assert df is not None
+        assert not df.empty

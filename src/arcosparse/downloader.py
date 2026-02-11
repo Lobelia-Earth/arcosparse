@@ -134,6 +134,10 @@ def read_query_from_sqlite_and_convert_to_df(
 
 
 def get_num_overflow_chunks(response) -> int | None:
+    if response.status_code == 403:
+        logger.debug("Chunk does not exist")
+        return None
+    response.raise_for_status()
     query = "SELECT * FROM meta"
 
     with tempfile.NamedTemporaryFile(
@@ -144,6 +148,8 @@ def get_num_overflow_chunks(response) -> int | None:
     try:
         with sqlite3.connect(temp_file.name) as connection:
             metadata = pd.read_sql(query, connection)
+        if metadata.empty:
+            return 0
         raw = metadata["metadata"].iloc[0]
 
         if raw is None:
@@ -153,6 +159,6 @@ def get_num_overflow_chunks(response) -> int | None:
             meta = json.loads(raw)
 
         return meta.get("overflow_chunks", 0)
-    except Exception as e:
-        logger.error(f"Error reading sqlite file metadata: {e}")
-        return None
+    finally:
+        logger.debug("deleting temporary file")
+        Path(temp_file.name).unlink()
