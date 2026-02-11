@@ -1,8 +1,8 @@
+import json
 import sqlite3
 import tempfile
 from pathlib import Path
 from typing import Literal, Optional
-import json
 
 # TODO: if we have performances issues
 # check if we could use polars instead of pandas
@@ -50,9 +50,15 @@ def download_and_convert_to_pandas(
             df = pd.DataFrame()
             for chunk in range(overflow_chunks + 1):
                 if chunk > 0:
-                    overflow_url = f"{base_url}/{platform_id}/{variable_id}/{chunk_name}b{chunk}.sqlite"
+                    overflow_url = (
+                        f"{base_url}/{platform_id}/"
+                        f"{variable_id}/{chunk_name}b{chunk}.sqlite"
+                    )
                 else:
-                    overflow_url = f"{base_url}/{platform_id}/{variable_id}/{chunk_name}.sqlite"
+                    overflow_url = (
+                        f"{base_url}/{platform_id}"
+                        f"/{variable_id}/{chunk_name}.sqlite"
+                    )
                 logger.debug(f"downloading overflow chunk {overflow_url}")
                 overflow_response = session.get(overflow_url)
                 overflow_df = read_query_from_sqlite_and_convert_to_df(
