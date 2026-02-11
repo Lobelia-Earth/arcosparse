@@ -25,17 +25,15 @@ def download_and_convert_to_pandas(
     columns_rename: dict[str, str],
 ) -> Optional[pd.DataFrame]:
     if platform_id:
-        url_to_download = (
-            f"{base_url}/{platform_id}/{variable_id}/{chunk_name}.sqlite"
-        )
+        url_base = f"{base_url}/{platform_id}/{variable_id}"
     else:
-        url_to_download = f"{base_url}/{variable_id}/{chunk_name}.sqlite"
-    logger.debug(f"downloading {url_to_download}")
+        url_base = f"{base_url}/{variable_id}"
+    logger.debug(f"downloading {url_base}/{chunk_name}.sqlite")
     # TODO: check if we'd better use boto3 instead of requests
     with ConfiguredRequestsSession(
         user_configuration=user_configuration
     ) as session:
-        response = session.get(url_to_download)
+        response = session.get(f"{url_base}/{chunk_name}.sqlite")
         # TODO: check that this is okay to save the file in a temporary file
         # else need to find a way to save it in memory
         # for this we need the encoding of the file:
@@ -44,53 +42,45 @@ def download_and_convert_to_pandas(
         # connection.executescript(database_content.read().decode('utf-8'))
         # OR use a thread safe csv writer:
         # https://stackoverflow.com/questions/33107019/multiple-threads-writing-to-the-same-csv-in-python # noqa
+        df = read_query_from_sqlite_and_convert_to_df(
+            response,
+            output_coordinates,
+            variable_id,
+            columns_rename,
+            vertical_axis,
+        )
         if (
             overflow_chunks := get_num_overflow_chunks(response)
         ) is not None and overflow_chunks > 0:
-            df = pd.DataFrame()
-            for chunk in range(overflow_chunks + 1):
-                if chunk > 0:
-                    overflow_url = (
-                        f"{base_url}/{platform_id}/"
-                        f"{variable_id}/{chunk_name}b{chunk}.sqlite"
-                    )
-                else:
-                    overflow_url = (
-                        f"{base_url}/{platform_id}"
-                        f"/{variable_id}/{chunk_name}.sqlite"
-                    )
+            for chunk in range(overflow_chunks):
+                overflow_url = f"{url_base}/{chunk_name}b{chunk+1}.sqlite"
                 logger.debug(f"downloading overflow chunk {overflow_url}")
+
                 overflow_response = session.get(overflow_url)
+
                 overflow_df = read_query_from_sqlite_and_convert_to_df(
                     overflow_response,
                     output_coordinates,
                     variable_id,
-                    vertical_axis,
                     columns_rename,
-                    output_path,
+                    vertical_axis,
                 )
                 logger.debug(f"Appending overflow chunk {chunk} to df")
                 if overflow_df is not None:
                     df = pd.concat([df, overflow_df], ignore_index=True)
-        else:
-            return read_query_from_sqlite_and_convert_to_df(
-                response,
-                output_coordinates,
-                variable_id,
-                vertical_axis,
-                columns_rename,
-                output_path,
-            )
-        return df
+
+    if output_path and df is not None:
+        df.to_parquet(output_path)
+        df = None
+    return df
 
 
 def read_query_from_sqlite_and_convert_to_df(
     response,
     output_coordinates: list[OutputCoordinate],
     variable_id: str,
+    columns_rename: dict[str, str],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
-    columns_rename: dict[str, str] = {},
-    output_path: Optional[Path] = None,
 ) -> pd.DataFrame | None:
     # means that the chunk does not exist
     if response.status_code == 403:
@@ -125,9 +115,6 @@ def read_query_from_sqlite_and_convert_to_df(
                 df["elevation"] = -df["elevation"]
                 columns_rename["elevation"] = "depth"
             df.rename(columns=columns_rename, inplace=True)
-        if output_path and df is not None:
-            df.to_parquet(output_path)
-            df = None
     finally:
         Path(temp_file.name).unlink()
     return df
