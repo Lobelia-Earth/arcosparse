@@ -59,6 +59,16 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
 
 ## Changelog
 
+### 0.5.0
+
+#### 0.5.0: Breaking Changes
+
+- Deleted `disable_progress_bar` argument in the functions `subset_and_return_dataframe` and `subset_and_save`. Use `progress_bar_configuration={"disable": True}` instead.
+
+#### 0.5.0: New features
+
+- `pandas>=3` is now available.
+
 ### 0.4.2
 
 #### 0.4.2: Bug fixes
