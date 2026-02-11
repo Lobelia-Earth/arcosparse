@@ -275,4 +275,4 @@ def get_full_chunks_names(
         range(start, end + 1) for _, (start, end) in sorted_chunks_indexes
     ]
     combinations = product(*ranges)
-    return {".".join(str(i) for i in idxs) for idxs in combinations}
+    return {".".join(map(str, combination)) for combination in combinations}
