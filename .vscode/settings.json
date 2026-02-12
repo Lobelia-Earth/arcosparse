@@ -2,5 +2,11 @@
     "[python]": {
         "editor.defaultFormatter": "ms-python.black-formatter",
     },
-    "black-formatter.args": ["--line-length", "79"],
+    "black-formatter.args": [
+        "--line-length",
+        "79"
+    ],
+    "python-envs.defaultEnvManager": "ms-python.python:poetry",
+    "python-envs.defaultPackageManager": "ms-python.python:poetry",
+    "python-envs.pythonProjects": [],
 }
