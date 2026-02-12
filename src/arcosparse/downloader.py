@@ -2,7 +2,7 @@ import json
 import sqlite3
 import tempfile
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 # TODO: if we have performances issues
 # check if we could use polars instead of pandas
@@ -79,7 +79,7 @@ def read_query_from_sqlite_and_convert_to_df(
     variable_id: str,
     columns_rename: dict[str, str],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
-) -> Union[pd.DataFrame | None, int | None]:
+) -> tuple[Optional[pd.DataFrame], Optional[int]]:
     # means that the chunk does not exist
     if response.status_code == 403:
         logger.debug("Chunk does not exist")
