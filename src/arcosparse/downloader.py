@@ -2,7 +2,7 @@ import json
 import sqlite3
 import tempfile
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
 # TODO: if we have performances issues
 # check if we could use polars instead of pandas
@@ -42,23 +42,21 @@ def download_and_convert_to_pandas(
         # connection.executescript(database_content.read().decode('utf-8'))
         # OR use a thread safe csv writer:
         # https://stackoverflow.com/questions/33107019/multiple-threads-writing-to-the-same-csv-in-python # noqa
-        df = read_query_from_sqlite_and_convert_to_df(
+        df, overflow_chunks = read_query_from_sqlite_and_convert_to_df(
             response,
             output_coordinates,
             variable_id,
             columns_rename,
             vertical_axis,
         )
-        if (
-            overflow_chunks := get_num_overflow_chunks(response)
-        ) is not None and overflow_chunks > 0:
+        if overflow_chunks is not None and overflow_chunks > 0:
             for chunk in range(overflow_chunks):
                 overflow_url = f"{url_base}/{chunk_name}b{chunk+1}.sqlite"
                 logger.debug(f"downloading overflow chunk {overflow_url}")
 
                 overflow_response = session.get(overflow_url)
 
-                overflow_df = read_query_from_sqlite_and_convert_to_df(
+                overflow_df, _ = read_query_from_sqlite_and_convert_to_df(
                     overflow_response,
                     output_coordinates,
                     variable_id,
@@ -66,12 +64,12 @@ def download_and_convert_to_pandas(
                     vertical_axis,
                 )
                 logger.debug(f"Appending overflow chunk {chunk} to df")
-                if overflow_df is not None:
+                if overflow_df is not None and df is not None:
                     df = pd.concat([df, overflow_df], ignore_index=True)
 
     if output_path and df is not None:
         df.to_parquet(output_path)
-        df = None
+        return
     return df
 
 
@@ -81,14 +79,15 @@ def read_query_from_sqlite_and_convert_to_df(
     variable_id: str,
     columns_rename: dict[str, str],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
-) -> pd.DataFrame | None:
+) -> Union[pd.DataFrame | None, int | None]:
     # means that the chunk does not exist
     if response.status_code == 403:
         logger.debug("Chunk does not exist")
-        return None
+        return None, None
     response.raise_for_status()
 
     query = "SELECT * FROM data"
+    query_metadata = "SELECT * FROM meta"
     if output_coordinates:
         query += " WHERE "
         query += " AND ".join(
@@ -106,7 +105,9 @@ def read_query_from_sqlite_and_convert_to_df(
     try:
         with sqlite3.connect(temp_file.name) as connection:
             df = pd.read_sql(query, connection)
+            metadata = pd.read_sql(query_metadata, connection)
         connection.close()
+
         df["variable"] = variable_id
         if df.empty:
             df = None
@@ -115,37 +116,18 @@ def read_query_from_sqlite_and_convert_to_df(
                 df["elevation"] = -df["elevation"]
                 columns_rename["elevation"] = "depth"
             df.rename(columns=columns_rename, inplace=True)
-    finally:
-        Path(temp_file.name).unlink()
-    return df
 
-
-def get_num_overflow_chunks(response) -> int | None:
-    if response.status_code == 403:
-        logger.debug("Chunk does not exist")
-        return None
-    response.raise_for_status()
-    query = "SELECT * FROM meta"
-
-    with tempfile.NamedTemporaryFile(
-        suffix=".sqlite", delete=False
-    ) as temp_file:
-        temp_file.write(response.content)
-        temp_file.flush()
-    try:
-        with sqlite3.connect(temp_file.name) as connection:
-            metadata = pd.read_sql(query, connection)
         if metadata.empty:
-            return 0
-        raw = metadata["metadata"].iloc[0]
-
-        if raw is None:
-            logger.debug("metadata is NULL, assuming no overflow chunks")
-            return 0
+            overflow = 0
         else:
-            meta = json.loads(raw)
+            raw = metadata["metadata"].iloc[0]
 
-        return meta.get("overflow_chunks", 0)
+            if raw is None:
+                logger.debug("metadata is NULL, assuming no overflow chunks")
+                overflow = 0
+            else:
+                meta = json.loads(raw)
+                overflow = meta.get("overflow_chunks", 0)
     finally:
-        logger.debug("deleting temporary file")
         Path(temp_file.name).unlink()
+    return df, overflow
