@@ -16136,6 +16136,12 @@
       'institution': 'Scripps Institution of Oceanography',
     }),
     dict({
+      'doi': 'https://doi.org/10.25921/9wpn-th28 https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'LDWR___BO',
+      'entity_type': 'BO',
+      'institution': 'Norwegian Meteorological Institute',
+    }),
+    dict({
       'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
       'entity_id': '6400528___DB',
       'entity_type': 'DB',
@@ -16428,6 +16434,12 @@
       'entity_id': '6401869___DB',
       'entity_type': 'DB',
       'institution': 'Scripps Institution of Oceanography',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'CGHL___BO',
+      'entity_type': 'BO',
+      'institution': 'Fisheries and Oceans Canada - Marine Environmental Data Section;Canadian Coast Guard',
     }),
     dict({
       'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
@@ -52500,6 +52512,66 @@
       'entity_id': '4601615___DB',
       'entity_type': 'DB',
       'institution': 'Scripps Institution of Oceanography',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.3334/cdiac/otg.vos_station_p_ca https://doi.org/10.3334/cdiac/otg.vos_tully_1989 https://doi.org/10.25921/9wpn-th28 https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'CG2958___BO',
+      'entity_type': 'BO',
+      'institution': 'Canadian Coast Guard',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.3334/cdiac/otg.clivar_ar07w_2012 https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'CCGC___BO',
+      'entity_type': 'BO',
+      'institution': 'Canadian Coast Guard',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.3334/cdiac/otg.switchyard_zzic2005swyd https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'ZZIC___BO',
+      'entity_type': 'BO',
+      'institution': 'Lamont-Doherty Earth Observatory - Columbia University',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.7289/v5g44njc https://doi.org/10.25921/0fbk-0c24 https://doi.org/10.25921/fxv3-g751 https://doi.org/10.25921/9wpn-th28 https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'EAKF___BO',
+      'entity_type': 'BO',
+      'institution': 'IEO-CSIC - Spanish Oceanographic Institute',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': '3801575___DB',
+      'entity_type': 'DB',
+      'institution': 'Scripps Institution of Oceanography',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': '6203676___DB',
+      'entity_type': 'DB',
+      'institution': 'EIG EUMETNET',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.25921/76ms-xp32 https://doi.org/10.25921/pds7-td05 https://doi.org/10.3334/cdiac/otg.vos_xue_chinare_24 https://doi.org/10.7289/v5862dr7 https://doi.org/10.7289/v5dj5cwf https://doi.org/10.7289/v5j964nm https://doi.org/10.25921/9wpn-th28 https://doi.org/10.25921/d4te-fs53 https://doi.org/10.25921/zyrq-ht66',
+      'entity_id': 'BNSK___BO',
+      'entity_type': 'BO',
+      'institution': 'Polar Research Institute of China',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': '9902279___SM',
+      'entity_type': 'SM',
+      'institution': 'Sea Mammal Research Unit',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': '9902273___SM',
+      'entity_type': 'SM',
+      'institution': 'Sea Mammal Research Unit',
+    }),
+    dict({
+      'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
+      'entity_id': 'WDC8924___TS',
+      'entity_type': 'TS',
+      'institution': 'Unknown institution',
     }),
   ])
 # ---
