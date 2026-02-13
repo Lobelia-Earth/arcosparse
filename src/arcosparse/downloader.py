@@ -100,13 +100,15 @@ def read_query_from_sqlite_and_convert_to_df(
                 for coordinate in output_coordinates
             ]
         )
+    tmp_path: str | None = None
     with tempfile.NamedTemporaryFile(
         suffix=".sqlite", delete=False
     ) as temp_file:
+        tmp_path = temp_file.name
         temp_file.write(response.content)
         temp_file.flush()
     try:
-        with sqlite3.connect(temp_file.name) as connection:
+        with sqlite3.connect(tmp_path) as connection:
             df = pd.read_sql(query, connection)
             try:
                 metadata = pd.read_sql(query_metadata, connection)
@@ -139,5 +141,5 @@ def read_query_from_sqlite_and_convert_to_df(
                 logger.debug(f"Metadata could not be processed: {e}")
                 overflow = 0
     finally:
-        Path(temp_file.name).unlink()
+        Path(tmp_path).unlink(missing_ok=True)
     return df, overflow
