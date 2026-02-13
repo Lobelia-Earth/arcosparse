@@ -128,19 +128,15 @@ def read_query_from_sqlite_and_convert_to_df(
         else:
             try:
                 raw = metadata["metadata"].iloc[0]
-            except (KeyError, IndexError) as e:
-                raw = None
-                logger.debug(
-                    f"metadata is NULL, assuming no overflow chunks: {e}"
-                )
-                overflow = 0
-            try:
                 meta = json.loads(raw)
                 overflow = meta.get("overflow_chunks", 0)
-            except (json.JSONDecodeError, TypeError) as e:
-                logger.debug(
-                    f"Failed to parse metadata JSON, assuming no overflow chunks: {e}"
-                )
+            except (
+                KeyError,
+                IndexError,
+                json.JSONDecodeError,
+                TypeError,
+            ) as e:
+                logger.debug(f"Metadata could not be processed: {e}")
                 overflow = 0
     finally:
         Path(temp_file.name).unlink()
