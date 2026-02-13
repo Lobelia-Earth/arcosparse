@@ -64,8 +64,11 @@ def download_and_convert_to_pandas(
                     vertical_axis,
                 )
                 logger.debug(f"Appending overflow chunk {chunk} to df")
-                if overflow_df is not None and df is not None:
-                    df = pd.concat([df, overflow_df], ignore_index=True)
+                if overflow_df is not None:
+                    if df is not None:
+                        df = pd.concat([df, overflow_df], ignore_index=True)
+                    else:
+                        df = overflow_df
 
     if output_path and df is not None:
         df.to_parquet(output_path)
@@ -105,7 +108,11 @@ def read_query_from_sqlite_and_convert_to_df(
     try:
         with sqlite3.connect(temp_file.name) as connection:
             df = pd.read_sql(query, connection)
-            metadata = pd.read_sql(query_metadata, connection)
+            try:
+                metadata = pd.read_sql(query_metadata, connection)
+            except (pd.errors.DatabaseError, sqlite3.OperationalError) as e:
+                logger.debug(f"No meta table found (or can't read it): {e}")
+                metadata = None
         connection.close()
 
         df["variable"] = variable_id
@@ -117,7 +124,7 @@ def read_query_from_sqlite_and_convert_to_df(
                 columns_rename["elevation"] = "depth"
             df.rename(columns=columns_rename, inplace=True)
 
-        if metadata.empty:
+        if metadata is None or metadata.empty:
             overflow = 0
         else:
             raw = metadata["metadata"].iloc[0]
