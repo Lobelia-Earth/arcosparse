@@ -6806,12 +6806,6 @@
       'institution': 'Institute of Marine Research',
     }),
     dict({
-      'doi': None,
-      'entity_id': 'Ytre-Utsira___CT',
-      'entity_type': 'CT',
-      'institution': 'Institute of Marine Research',
-    }),
-    dict({
       'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
       'entity_id': 'NRFJ___XB',
       'entity_type': 'XB',
