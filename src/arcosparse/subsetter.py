@@ -45,8 +45,8 @@ def _subset(
     user_configuration: UserConfiguration,
     url_metadata: str,
     output_path: Optional[Path],
-    disable_progress_bar: bool,
     columns_rename: Optional[dict[str, str]],
+    progress_bar_configuration: Optional[dict] = None,
 ) -> Optional[pd.DataFrame]:
     columns_rename = _set_columns_rename(columns_rename)
     request = UserRequest(
@@ -136,10 +136,7 @@ def _subset(
             download_and_convert_to_pandas,
             tasks,
             max_concurrent_requests=user_configuration.max_concurrent_requests,
-            tdqm_bar_configuration={
-                "disable": disable_progress_bar,
-                "desc": "Downloading files",
-            },
+            tdqm_bar_configuration=progress_bar_configuration,
         )
         if result is not None
     ]
@@ -165,8 +162,8 @@ def subset_and_save(
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
-    disable_progress_bar: bool = False,
     columns_rename: Optional[dict[str, str]] = None,
+    progress_bar_configuration: Optional[dict] = None,
 ) -> None:
     """
     Parameters
@@ -199,11 +196,11 @@ def subset_and_save(
         The path where to save the subsetted data.
     user_configuration: Optional[UserConfiguration], default=UserConfiguration()
         The user configuration to use for the requests.
-    disable_progress_bar: Optional[bool], default=False
-        Disable the progress bar.
     columns_rename: Optional[dict[str, str]], default=None
         The columns to rename in the resulting dataframe. Setting two columns with the same name will raise the follwing error:
         "ValueError: Duplicate column names found"
+    progress_bar_configuration: dict, default={}
+        The configuration for the progress bar. It will be passed to the tqdm function. For example, you can set the description of the progress bar with {"desc": "Downloading data"}.
 
     Returns
     -------
@@ -276,8 +273,8 @@ def subset_and_save(
         user_configuration=user_configuration,
         url_metadata=url_metadata,
         output_path=output_path,
-        disable_progress_bar=disable_progress_bar,
         columns_rename=columns_rename,
+        progress_bar_configuration=progress_bar_configuration,
     )
 
 
@@ -295,8 +292,8 @@ def subset_and_return_dataframe(
     entities: list[str] = [],
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     user_configuration: UserConfiguration = UserConfiguration(),
-    disable_progress_bar: bool = False,
     columns_rename: Optional[dict[str, str]] = None,
+    progress_bar_configuration: Optional[dict] = None,
 ) -> pd.DataFrame:
     """
     Parameters
@@ -327,11 +324,11 @@ def subset_and_return_dataframe(
         If depth selected, we will rename the vertical axis to depth and multiply by -1.
     user_configuration: Optional[arcosparse.UserConfiguration], default=arcosparse.UserConfiguration()
         The user configuration to use for the requests.
-    disable_progress_bar: Optional[bool], default=False
-        Disable the progress bar.
     columns_rename: Optional[dict[str, str]], default=None
         The columns to rename in the resulting dataframe. Setting two columns with the same name will raise the follwing error:
         "ValueError: Duplicate column names found"
+    progress_bar_configuration: dict, default={}
+        The configuration for the progress bar. It will be passed to the tqdm function. For example, you can set the description of the progress bar with {"desc": "Downloading data"}.
 
     Returns
     -------
@@ -370,8 +367,8 @@ def subset_and_return_dataframe(
         vertical_axis=vertical_axis,
         user_configuration=user_configuration,
         output_path=None,
-        disable_progress_bar=disable_progress_bar,
         columns_rename=columns_rename,
+        progress_bar_configuration=progress_bar_configuration,
     )
     if df is None:
         return pd.DataFrame()

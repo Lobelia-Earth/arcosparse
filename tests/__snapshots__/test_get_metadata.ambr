@@ -9,7 +9,7 @@
     'coordinates': list([
       dict({
         'coordinate_id': 'time',
-        'maximum': 1769903400,
+        'maximum': 1769903940,
         'minimum': -4063996800,
         'step': None,
         'unit': 'seconds since 1970-01-01 00:00:00',
