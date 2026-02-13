@@ -1,6 +1,7 @@
 import json
 import sqlite3
 import tempfile
+import time
 from pathlib import Path
 from typing import Literal, Optional
 
@@ -141,5 +142,12 @@ def read_query_from_sqlite_and_convert_to_df(
                 logger.debug(f"Metadata could not be processed: {e}")
                 overflow = 0
     finally:
-        Path(tmp_path).unlink(missing_ok=True)
+        if tmp_path is not None:
+            for _ in range(10):
+                try:
+                    Path(tmp_path).unlink(missing_ok=True)
+                    break
+                except PermissionError:
+                    # On Windows the file can remain locked briefly.
+                    time.sleep(0.05)
     return df, overflow
