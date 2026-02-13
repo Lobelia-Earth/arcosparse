@@ -46,7 +46,7 @@ def _subset(
     url_metadata: str,
     output_path: Optional[Path],
     columns_rename: Optional[dict[str, str]],
-    progress_bar_configuration: dict = {},
+    progress_bar_configuration: Optional[dict] = None,
 ) -> Optional[pd.DataFrame]:
     columns_rename = _set_columns_rename(columns_rename)
     request = UserRequest(
@@ -136,9 +136,7 @@ def _subset(
             download_and_convert_to_pandas,
             tasks,
             max_concurrent_requests=user_configuration.max_concurrent_requests,
-            tdqm_bar_configuration={
-                **progress_bar_configuration,
-            },
+            tdqm_bar_configuration=progress_bar_configuration,
         )
         if result is not None
     ]
@@ -165,7 +163,7 @@ def subset_and_save(
     output_path: Optional[Path] = None,
     user_configuration: UserConfiguration = UserConfiguration(),
     columns_rename: Optional[dict[str, str]] = None,
-    progress_bar_configuration: dict = {},
+    progress_bar_configuration: Optional[dict] = None,
 ) -> None:
     """
     Parameters
@@ -295,7 +293,7 @@ def subset_and_return_dataframe(
     vertical_axis: Literal["elevation", "depth"] = "elevation",
     user_configuration: UserConfiguration = UserConfiguration(),
     columns_rename: Optional[dict[str, str]] = None,
-    progress_bar_configuration: dict = {},
+    progress_bar_configuration: Optional[dict] = None,
 ) -> pd.DataFrame:
     """
     Parameters

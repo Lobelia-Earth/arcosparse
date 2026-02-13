@@ -18,12 +18,12 @@ def run_concurrently(
     func: Callable[..., _T],
     function_arguments: Sequence[tuple[Any, ...]],
     max_concurrent_requests: int,
-    tdqm_bar_configuration: dict = {},
+    tdqm_bar_configuration: Optional[dict] = None,
 ) -> list[_T]:
     out = []
     with tqdm(
         total=len(function_arguments),
-        **tdqm_bar_configuration,
+        **(tdqm_bar_configuration or {}),
     ) as pbar:
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=max_concurrent_requests
