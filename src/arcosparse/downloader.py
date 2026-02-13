@@ -113,12 +113,11 @@ def read_query_from_sqlite_and_convert_to_df(
             except (pd.errors.DatabaseError, sqlite3.OperationalError) as e:
                 logger.debug(f"No meta table found (or can't read it): {e}")
                 metadata = None
-        connection.close()
 
-        df["variable"] = variable_id
         if df.empty:
             df = None
         else:
+            df["variable"] = variable_id
             if vertical_axis == "depth" and "elevation" in df.columns:
                 df["elevation"] = -df["elevation"]
                 columns_rename["elevation"] = "depth"
@@ -127,14 +126,22 @@ def read_query_from_sqlite_and_convert_to_df(
         if metadata is None or metadata.empty:
             overflow = 0
         else:
-            raw = metadata["metadata"].iloc[0]
-
-            if raw is None:
-                logger.debug("metadata is NULL, assuming no overflow chunks")
+            try:
+                raw = metadata["metadata"].iloc[0]
+            except (KeyError, IndexError) as e:
+                raw = None
+                logger.debug(
+                    f"metadata is NULL, assuming no overflow chunks: {e}"
+                )
                 overflow = 0
-            else:
+            try:
                 meta = json.loads(raw)
                 overflow = meta.get("overflow_chunks", 0)
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.debug(
+                    f"Failed to parse metadata JSON, assuming no overflow chunks: {e}"
+                )
+                overflow = 0
     finally:
         Path(temp_file.name).unlink()
     return df, overflow
