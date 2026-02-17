@@ -18,10 +18,10 @@ It means that the data is saved in one folder and in this folder there are many 
 
 To open the data into a dataframe, use this snippet:
 
-``` python
+```python
 import glob
 
-output_path = "some_folder" 
+output_path = "some_folder"
 
 # Get all partitioned Parquet files
 parquet_files = glob.glob(f"{output_path}/*.parquet")
@@ -68,6 +68,7 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
 #### 0.5.0: New features
 
 - `pandas>=3` is now available.
+- Add a way to handle metadata in chunks. Now capable of reading overflow chunks.
 
 ### 0.4.2
 
@@ -87,7 +88,7 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
 
 - Deleted function `get_entities_ids`. Use `get_entities` as a replacement. Example:
 
-``` python
+```python
 # old code
 my_entities = get_entities_ids(url_metadata)
 
