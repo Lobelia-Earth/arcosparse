@@ -105,7 +105,7 @@ def read_df_from_sqlite(
 
 def read_metadata_from_sqlite(
     tmp_path: str,
-) -> Optional[pd.DataFrame]:
+) -> Optional[int]:
     query_metadata = "SELECT * FROM meta"
     with sqlite3.connect(tmp_path) as connection:
         try:
