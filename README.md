@@ -69,6 +69,7 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
 
 - `pandas>=3` is now available.
 - Add a way to handle metadata in chunks. Now capable of reading overflow chunks.
+- Change license to EUPL-1.2.
 
 ### 0.4.2
 
