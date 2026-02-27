@@ -1,9 +1,16 @@
 # arcosparse: A Python library for ARCO sparse datasets subsetting
 
-> [!WARNING]
-> This library is still in development. Breaking changes might be introduced from version `0.y.z` to `0.y+1.z`.
+## Disclaimer
+
+It is **not** recommended to use the `arcosparse` library directly.
+Instead, if you want to work with sparse datasets, use the [`copernicusmarine` Toolbox](https://toolbox-docs.marine.copernicus.eu/en/stable/) or tools [like `earthkit`](https://earthkit.ecmwf.int/).
+
+Issues on the repository are welcome and we will do our best to answer them.
 
 ## Usage
+
+> [!WARNING]
+> This library is still in development. Breaking changes might be introduced from version `0.y.z` to `0.y+1.z`.
 
 ### Main functions
 
@@ -104,6 +111,7 @@ Note that STAC catalogues are typically public, so `arcosparse` will request the
 - Add a way to handle metadata in chunks. Now capable of reading overflow chunks.
 - Change license to EUPL-1.2.
 - Can authenticate the requests to the assets with a token provided in `auth_token` in `user_configuration`. It is passed as the `Authorization: Bearer {auth_token}` header. See the "Authentication" section in the doc for more details.
+- `arcosparse` got public. The repository is now open.
 
 ### 0.4.2
 
