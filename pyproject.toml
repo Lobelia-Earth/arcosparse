@@ -1,6 +1,6 @@
 [project]
 name = "arcosparse"
-version = "0.4.2"
+version = "0.5.0"
 description = "Helper to download and subset sparse data that has been Arcoified and are available through STAC and sqlite formated data"
 authors = [{name = "renaudjester",  email = "renaud.jester@lobelia.earth"}, {name = "Lobelia", email = "developer@lobelia.earth"}]
 readme = "README.md"
