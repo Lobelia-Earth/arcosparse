@@ -75,7 +75,15 @@ user_configuration = arcosparse.UserConfiguration(
 )
 df = arcosparse.subset_and_return_dataframe(
     url_metadata="https://example.com/metadata.json",
-    query="some_query",
+    minimum_latitude=10,
+    maximum_latitude=20,
+    minimum_longitude=30,
+    maximum_longitude=40,
+    minimum_time="2020-01-01T00:00:00Z",
+    maximum_time="2020-12-31T23:59:59Z",
+    minimum_elevation=0,
+    maximum_elevation=1000,
+    variables=["temperature", "precipitation"],
     user_configuration=user_configuration
 )
 ```
