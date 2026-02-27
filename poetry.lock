@@ -1146,6 +1146,21 @@ files = [
 six = ">=1.5"
 
 [[package]]
+name = "python-dotenv"
+version = "1.2.1"
+description = "Read key-value pairs from a .env file and set them as environment variables"
+optional = false
+python-versions = ">=3.9"
+groups = ["dev"]
+files = [
+    {file = "python_dotenv-1.2.1-py3-none-any.whl", hash = "sha256:b81ee9561e9ca4004139c6cbba3a238c32b03e4894671e181b671e8cb8425d61"},
+    {file = "python_dotenv-1.2.1.tar.gz", hash = "sha256:42667e897e16ab0d66954af0e60a9caa94f0fd4ecf3aaf6d2d260eec1aa36ad6"},
+]
+
+[package.extras]
+cli = ["click (>=5.0)"]
+
+[[package]]
 name = "pytz"
 version = "2025.2"
 description = "World timezone definitions, modern and historical"
@@ -1461,4 +1476,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.9"
-content-hash = "d33c6810d61d9306cb09bae6fbb2e56d01f9283e88f448b7d2a828dbc9f32eb9"
+content-hash = "9a5e9ca09bc49f8605d5fa0febcbb435c8e325437e3708e9ca466008f9895da6"

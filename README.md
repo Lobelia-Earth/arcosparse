@@ -57,6 +57,39 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
   - `step`: the step of the coordinate.
   - `values`: the values of the coordinate.
 
+### Authentication
+
+You may need to authenticate to access some datasets, particularly when working with ECMWF data.
+
+To do so, use the `user_configuration` argument, which accepts an `arcosparse.UserConfiguration` instance containing the following fields:
+
+- `auth_token`: The token used to authenticate requests. It is passed as the `Authorization: Bearer {auth_token}` header.
+
+Example:
+
+```python
+import arcosparse
+
+user_configuration = arcosparse.UserConfiguration(
+    auth_token="my_token"
+)
+df = arcosparse.subset_and_return_dataframe(
+    url_metadata="https://example.com/metadata.json",
+    minimum_latitude=10,
+    maximum_latitude=20,
+    minimum_longitude=30,
+    maximum_longitude=40,
+    minimum_time="2020-01-01T00:00:00Z",
+    maximum_time="2020-12-31T23:59:59Z",
+    minimum_elevation=0,
+    maximum_elevation=1000,
+    variables=["temperature", "precipitation"],
+    user_configuration=user_configuration
+)
+```
+
+Note that STAC catalogues are typically public, so `arcosparse` will request the catalogue without authentication. However, any asset links found within the catalogue will be authenticated using the token provided in `auth_token`, if one is supplied.
+
 ## Changelog
 
 ### 0.5.0
@@ -70,6 +103,7 @@ Returns an object `arcosparse.Dataset`. It contains information about the datase
 - `pandas>=3` is now available.
 - Add a way to handle metadata in chunks. Now capable of reading overflow chunks.
 - Change license to EUPL-1.2.
+- Can authenticate the requests to the assets with a token provided in `auth_token` in `user_configuration`. It is passed as the `Authorization: Bearer {auth_token}` header. See the "Authentication" section in the doc for more details.
 
 ### 0.4.2
 
