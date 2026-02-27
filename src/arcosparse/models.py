@@ -289,6 +289,7 @@ class UserConfiguration:
     https_retries: int = 5
     https_timeout: int = 60
     extra_params: dict[str, str] = field(default_factory=dict)
+    auth_token: Optional[str] = None
 
 
 @dataclass

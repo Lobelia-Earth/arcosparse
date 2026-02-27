@@ -482,7 +482,7 @@ def _get_metadata(
     with ConfiguredRequestsSession(
         user_configuration=user_configuration
     ) as session:
-        result = session.get(url_metadata)
+        result = session.get(url_metadata, authenticated=False)
         result.raise_for_status()
         metadata_item = pystac.Item.from_dict(result.json())
         platforms_metadata = None

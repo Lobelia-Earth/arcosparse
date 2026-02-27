@@ -49,7 +49,31 @@ class ConfiguredRequestsSession(requests.Session):
             )
         self.params = user_configuration.extra_params
         self.https_timeout = user_configuration.https_timeout
+        self.bearer = (
+            BearerAuth(user_configuration.auth_token)
+            if user_configuration.auth_token
+            else None
+        )
 
-    def request(self, *args, **kwargs):
+    def request(self, *args, authenticated=True, **kwargs):
         kwargs.setdefault("timeout", self.https_timeout)
+        if self.bearer and authenticated:
+            kwargs.setdefault("auth", self.bearer)
         return super().request(*args, **kwargs)
+
+
+# from https://stackoverflow.com/questions/29931671/making-an-api-call-in-python-with-an-api-that-requires-a-bearer-token
+class BearerAuth(requests.auth.AuthBase):
+    """
+    Allow to pass the bearer as "auth" argument to the requests.get method and not as a header.
+
+    Hence the headers are not overwritten by the netrc file as stated here:
+    https://requests.readthedocs.io/en/latest/user/authentication/#netrc-authentication
+    """  # noqa
+
+    def __init__(self, token: str):
+        self.token = token
+
+    def __call__(self, r):
+        r.headers["authorization"] = "Bearer " + self.token
+        return r

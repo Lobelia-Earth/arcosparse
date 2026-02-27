@@ -17648,6 +17648,12 @@
       'institution': 'Unknown institution',
     }),
     dict({
+      'doi': 'https://doi.org/10.25921/sxeq-qy84 https://doi.org/10.25921/9wpn-th28',
+      'entity_id': 'TFNA___BO',
+      'entity_type': 'BO',
+      'institution': 'Marine and Freshwater Research Institute',
+    }),
+    dict({
       'doi': 'https://doi.org/10.13155/59938 https://doi.org/10.13155/40846 https://doi.org/10.13155/53381 https://doi.org/10.13155/36230 https://doi.org/10.13155/43494',
       'entity_id': '4400842A___DB',
       'entity_type': 'DB',
