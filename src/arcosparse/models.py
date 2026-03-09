@@ -337,3 +337,4 @@ class Entity:
     entity_type: str
     institution: Optional[str]
     doi: Optional[str]
+    institution_edmo_code: Optional[str] = None

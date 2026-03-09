@@ -403,6 +403,8 @@ def get_entities(
             The type of the entity.
         - institution: str, optional
             The institution of the entity.
+        - institution_edmo_code: str, optional
+            The EDMO code of the institution of the entity.
         - doi: str, optional
             The doi of the entity.
     """  # noqa
@@ -423,6 +425,7 @@ def get_entities(
                 institution=institution_mapping.get(
                     platform_info.get("inst"), None
                 ),
+                institution_edmo_code=platform_info.get("inst_edmo"),
                 doi=doi_mapping.get(platform_info.get("doi"), None),
             )
         )
