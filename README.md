@@ -46,6 +46,7 @@ Returns a list of `arcosparse.Entity`. It contains information about the entitie
 - `entity_type`: same as the `entity_type` column in the result of a subset.
 - `doi`: the DOI of the entity.
 - `institution`: the institution associated with the entity.
+- `institution_edmo_code`: the EDMO code of the institution associated with the entity.
 
 #### `arcosparse.get_dataset_metadata`
 
@@ -98,6 +99,12 @@ df = arcosparse.subset_and_return_dataframe(
 Note that STAC catalogues are typically public, so `arcosparse` will request the catalogue without authentication. However, any asset links found within the catalogue will be authenticated using the token provided in `auth_token`, if one is supplied.
 
 ## Changelog
+
+### 0.5.1
+
+#### 0.5.1: New features
+
+- Add some metadata retrieved about platforms in the `arcosparse.Entity` object. Now it contains the `institution_edmo_code` associated with the entity.
 
 ### 0.5.0
 

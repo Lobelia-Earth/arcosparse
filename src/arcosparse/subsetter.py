@@ -423,6 +423,9 @@ def get_entities(
                 institution=institution_mapping.get(
                     platform_info.get("inst"), None
                 ),
+                institution_edmo_code=institution_mapping.get(
+                    platform_info.get("inst_edmo"), None
+                ),
                 doi=doi_mapping.get(platform_info.get("doi"), None),
             )
         )
