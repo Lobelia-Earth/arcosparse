@@ -13,7 +13,8 @@ USER_CONFIGURATION_1 = arcosparse.UserConfiguration(
     auth_token=None,
 )
 USER_CONFIGURATION_2 = arcosparse.UserConfiguration(
-    auth_token=os.getenv("ARCOSPARSE_ECMWF_TOKEN")
+    auth_token=os.getenv("ARCOSPARSE_ECMWF_TOKEN"),
+    extra_params={"hello": "world"},
 )
 
 
