@@ -193,6 +193,5 @@ def _download_chunk_to_temp_file(
         suffix=".sqlite", delete=False
     ) as temp_file:
         tmp_path = temp_file.name
-        tmp_path = client.download_file(f"{chunk_name}.sqlite", tmp_path)
-        temp_file.flush()
+    tmp_path = client.download_file(f"{chunk_name}.sqlite", tmp_path)
     return Path(tmp_path) if tmp_path else None
