@@ -5,7 +5,6 @@ from unittest.mock import MagicMock, patch
 
 import certifi
 import pytest
-import requests
 from botocore.exceptions import ClientError
 
 from arcosparse.models import S3Credentials, UserConfiguration
@@ -413,5 +412,5 @@ class TestGetObject:
             "ResponseMetadata": {"HTTPStatusCode": 403},
             "Body": io.BytesIO(b""),
         }
-        with pytest.raises(requests.HTTPError, match="403"):
+        with pytest.raises(ValueError, match="403"):
             session.get_object("secret.json")

@@ -10,7 +10,6 @@ import boto3
 import botocore
 import botocore.config
 import certifi
-import requests
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
@@ -94,10 +93,7 @@ class ConfiguredBoto3Session:
         if status_code is None:
             raise ValueError("Invalid response object: missing HTTPStatusCode")
         if not (200 <= status_code < 300):
-            raise requests.HTTPError(
-                f"HTTP error {status_code} for S3 operation",
-                response=response,
-            )
+            raise ValueError(f"HTTP error {status_code} for S3 operation")
 
     def _response_to_json(self, response: Any) -> dict:
         result = response["Body"].read()
