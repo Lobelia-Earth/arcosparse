@@ -1,8 +1,8 @@
 import gzip
 import json
 import logging
-import os
 import re
+from pathlib import PurePosixPath
 from typing import Any, Callable, Literal, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
@@ -61,7 +61,7 @@ class ConfiguredBoto3Session:
         try:
             self.s3_client.download_file(
                 self.bucket_name,
-                os.path.join(self.prefix, object_key),
+                str(PurePosixPath(self.prefix) / object_key),
                 file_path,
                 Config=TransferConfig(use_threads=self.use_threads),
             )
@@ -79,7 +79,7 @@ class ConfiguredBoto3Session:
     def get_object(self, object_key: str) -> dict:
         full_object_key = self.prefix
         if object_key:
-            full_object_key = os.path.join(self.prefix, object_key)
+            full_object_key = str(PurePosixPath(self.prefix) / object_key)
         response = self.s3_client.get_object(
             Bucket=self.bucket_name, Key=full_object_key
         )
