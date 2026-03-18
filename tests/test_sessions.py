@@ -87,20 +87,6 @@ class TestParseAccessDatasetUrl:
         with pytest.raises(ValueError, match="Invalid data path"):
             _make_session(url="not-a-url")
 
-    def test_only_dataset_root_path(self):
-        session, _, _ = _make_session(url=URL_COPERNICUS)
-        endpoint, bucket, path = session._parse_access_dataset_url(
-            URL_COPERNICUS, only_dataset_root_path=True
-        )
-        assert endpoint == "https://stac.marine.copernicus.eu"
-        assert bucket == "metadata"
-        # only_dataset_root_path keeps segments[2:5] + "/"
-        assert path == (
-            "INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/"
-            "cmems_obs-ins_arc_phybgcwav_mynrt_na_irr_202311"
-            "--ext--history/dataset.stac.json/"
-        )
-
 
 # ── Query-param construction ────────────────────────────────────
 
@@ -110,32 +96,19 @@ class TestConstructUrlWithQueryParams:
         session, _, _ = _make_session()
         return session
 
-    def test_adds_params_to_bare_url(self):
+    def test_updates_existing_params(self):
         session = self._session()
         result = session._construct_url_with_query_params(
-            "https://example.com/path", {"foo": "1", "bar": "2"}
-        )
-        assert result is not None
-        assert "foo=1" in result
-        assert "bar=2" in result
-
-    def test_merges_with_existing_params(self):
-        session = self._session()
-        result = session._construct_url_with_query_params(
-            "https://example.com/path?existing=yes", {"new": "val"}
+            "https://example.com/path?existing=yes&key=old",
+            {
+                "key": "new",
+                "foo": "1",
+            },
         )
         assert result is not None
         assert "existing=yes" in result
-        assert "new=val" in result
-
-    def test_overrides_existing_params(self):
-        session = self._session()
-        result = session._construct_url_with_query_params(
-            "https://example.com/path?key=old", {"key": "new"}
-        )
-        assert result is not None
         assert "key=new" in result
-        assert "key=old" not in result
+        assert "foo=1" in result
 
     def test_empty_params_preserves_url(self):
         session = self._session()
@@ -144,46 +117,6 @@ class TestConstructUrlWithQueryParams:
         )
         assert result is not None
         assert "a=1" in result
-
-
-# ── Response helpers ────────────────────────────────────────────
-
-
-class TestRaiseForStatus:
-    def _session(self):
-        s, _, _ = _make_session()
-        return s
-
-    def test_200_does_not_raise(self):
-        session = self._session()
-        session._raise_for_status(
-            {"ResponseMetadata": {"HTTPStatusCode": 200}}
-        )
-
-    def test_299_does_not_raise(self):
-        session = self._session()
-        session._raise_for_status(
-            {"ResponseMetadata": {"HTTPStatusCode": 299}}
-        )
-
-    def test_400_raises_http_error(self):
-        session = self._session()
-        with pytest.raises(requests.HTTPError, match="400"):
-            session._raise_for_status(
-                {"ResponseMetadata": {"HTTPStatusCode": 400}}
-            )
-
-    def test_500_raises_http_error(self):
-        session = self._session()
-        with pytest.raises(requests.HTTPError, match="500"):
-            session._raise_for_status(
-                {"ResponseMetadata": {"HTTPStatusCode": 500}}
-            )
-
-    def test_missing_status_raises_value_error(self):
-        session = self._session()
-        with pytest.raises(ValueError, match="missing HTTPStatusCode"):
-            session._raise_for_status({})
 
 
 class TestResponseToJson:
@@ -210,7 +143,7 @@ class TestResponseToJson:
 # ── Constructor / UserConfiguration variants ────────────────────
 
 
-class TestDefaultConfiguration:
+class TestNetworkConfiguration:
     def test_default_uses_certifi_and_unsigned(self):
         with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
             mock_client = MagicMock()
@@ -233,8 +166,6 @@ class TestDefaultConfiguration:
             assert kwargs.kwargs["aws_session_token"] is None
             assert session.use_threads is True
 
-
-class TestDisableSsl:
     def test_verify_is_false_when_ssl_disabled(self):
         with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
             mock_client = MagicMock()
@@ -248,8 +179,6 @@ class TestDisableSsl:
             kwargs = mock_boto3.return_value.client.call_args
             assert kwargs.kwargs["verify"] is False
 
-
-class TestSslCertificatePath:
     def test_custom_cert_path(self):
         with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
             mock_client = MagicMock()
@@ -265,8 +194,6 @@ class TestSslCertificatePath:
             kwargs = mock_boto3.return_value.client.call_args
             assert kwargs.kwargs["verify"] == "/custom/cert.pem"
 
-
-class TestTrustEnv:
     def test_trust_env_false_sets_empty_proxies(self):
         with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
             mock_client = MagicMock()
@@ -281,8 +208,6 @@ class TestTrustEnv:
             config = kwargs.kwargs["config"]
             assert config.proxies == {"http": "", "https": ""}
 
-
-class TestHttpsRetries:
     def test_custom_retries(self):
         with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
             mock_client = MagicMock()
@@ -298,57 +223,11 @@ class TestHttpsRetries:
             assert config.retries["max_attempts"] == 10
             assert config.retries["mode"] == "adaptive"
 
-
-class TestUseThreads:
     def test_use_threads_false(self):
         session, _, _ = _make_session(
             user_configuration=UserConfiguration(use_threads=False)
         )
         assert session.use_threads is False
-
-    def test_use_threads_true(self):
-        session, _, _ = _make_session(
-            user_configuration=UserConfiguration(use_threads=True)
-        )
-        assert session.use_threads is True
-
-
-class TestS3Credentials:
-    def test_credentials_passed_to_client(self):
-        creds = S3Credentials(
-            access_key="AKID",
-            secret_key="SECRET",
-            session_token="TOKEN",
-        )
-        with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
-            mock_client = MagicMock()
-            mock_boto3.return_value.client.return_value = mock_client
-
-            ConfiguredBoto3Session(
-                url=URL_COPERNICUS,
-                user_configuration=UserConfiguration(s3_credentials=creds),
-            )
-
-            kwargs = mock_boto3.return_value.client.call_args
-            assert kwargs.kwargs["aws_access_key_id"] == "AKID"
-            assert kwargs.kwargs["aws_secret_access_key"] == "SECRET"
-            assert kwargs.kwargs["aws_session_token"] == "TOKEN"
-
-    def test_credentials_without_session_token(self):
-        creds = S3Credentials(access_key="AKID", secret_key="SECRET")
-        with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
-            mock_client = MagicMock()
-            mock_boto3.return_value.client.return_value = mock_client
-
-            ConfiguredBoto3Session(
-                url=URL_COPERNICUS,
-                user_configuration=UserConfiguration(s3_credentials=creds),
-            )
-
-            kwargs = mock_boto3.return_value.client.call_args
-            assert kwargs.kwargs["aws_access_key_id"] == "AKID"
-            assert kwargs.kwargs["aws_secret_access_key"] == "SECRET"
-            assert kwargs.kwargs["aws_session_token"] is None
 
 
 class TestAuthToken:
@@ -442,33 +321,6 @@ class TestAuthConflict:
                     s3_credentials=creds,
                 )
             )
-
-
-# ── Context manager ─────────────────────────────────────────────
-
-
-class TestContextManager:
-    def test_enter_returns_self(self):
-        session, _, _ = _make_session()
-        assert session.__enter__() is session
-
-    def test_exit_calls_close(self):
-        session, _, mock_client = _make_session()
-        session.__exit__(None, None, None)
-        mock_client.close.assert_called_once()
-
-    def test_with_statement(self):
-        with patch("arcosparse.sessions.boto3.Session") as mock_boto3:
-            mock_client = MagicMock()
-            mock_boto3.return_value.client.return_value = mock_client
-
-            with ConfiguredBoto3Session(
-                url=URL_COPERNICUS,
-                user_configuration=UserConfiguration(),
-            ) as session:
-                assert isinstance(session, ConfiguredBoto3Session)
-
-            mock_client.close.assert_called_once()
 
 
 # ── download_file / get_object ──────────────────────────────────

@@ -34,7 +34,8 @@ class ConfiguredBoto3Session:
         )
         if user_configuration.auth_token and user_configuration.s3_credentials:
             raise ValueError(
-                "Cannot use both auth_token and s3_credentials for authentication"
+                "Cannot use both auth_token and "
+                "s3_credentials for authentication"
             )
         self.s3_client = self._get_configured_boto3_session(
             self.enpoint_url,
@@ -55,7 +56,8 @@ class ConfiguredBoto3Session:
 
     def download_file(self, object_key: str, file_path: str) -> Optional[str]:
         """
-        If the file is not found, returns None, else returns the path to the file.
+        If the file is not found, returns None,
+        else returns the path to the file.
         """
         try:
             self.s3_client.download_file(
@@ -159,8 +161,7 @@ class ConfiguredBoto3Session:
                 "Authorization": f"Bearer {user_configuration.auth_token}"
             }
         for operation in operation_type:
-            # Register the botocore event handler for adding custom query params
-            # to S3 HEAD and GET requests
+            # Register the botocore event handler for adding custom params
             s3_client.meta.events.register(
                 f"before-call.s3.{operation}",
                 self._create_custom_query_function(
@@ -199,7 +200,7 @@ class ConfiguredBoto3Session:
         return urlunparse(new_parsed)
 
     def _parse_access_dataset_url(
-        self, data_path: str, only_dataset_root_path: bool = False
+        self, data_path: str
     ) -> tuple[str, str, str]:
         match = re.search(
             r"^(http|https):\/\/([\w\-\.]+)(:[\d]+)?(\/.*)", data_path
@@ -209,11 +210,7 @@ class ConfiguredBoto3Session:
             full_path = match.group(4)
             segments = full_path.split("/")
             bucket = segments[1]
-            path = (
-                "/".join(segments[2:])
-                if not only_dataset_root_path
-                else "/".join(segments[2:5]) + "/"
-            )
+            path = "/".join(segments[2:])
             return endpoint_url, bucket, path
         else:
             raise ValueError(f"Invalid data path: {data_path}")
