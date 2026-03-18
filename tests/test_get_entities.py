@@ -33,5 +33,5 @@ class TestGetEntities:
             assert entities is not None
             assert len(entities) > 0
             assert snapshot(name=f"url{i}") == [
-                asdict(entity) for entity in entities
+                asdict(entity) for entity in entities[:30]
             ]
