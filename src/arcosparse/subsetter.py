@@ -487,8 +487,8 @@ def _get_metadata(
         user_configuration=user_configuration,
         token_authenticated=False,
     ) as unauthenticated_s3_client:
-        result = unauthenticated_s3_client.get_object("")
-        metadata_item = pystac.Item.from_dict(result)
+        item_metadata = unauthenticated_s3_client.get_object("")
+        metadata_item = pystac.Item.from_dict(item_metadata)
         platforms_metadata = None
         if platform_ids_subset:
             platforms_asset = metadata_item.get_assets().get("platforms")
@@ -498,8 +498,8 @@ def _get_metadata(
                 url=platforms_asset.href,
                 user_configuration=user_configuration,
             ) as s3_client:
-                result = s3_client.get_object("")
-        return metadata_item, result
+                platforms_metadata = s3_client.get_object("")
+        return metadata_item, platforms_metadata
 
 
 def _set_columns_rename(

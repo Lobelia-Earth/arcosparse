@@ -43,7 +43,7 @@ def download_and_convert_to_pandas(
         # OR use a thread safe csv writer:
         # https://stackoverflow.com/questions/33107019/multiple-threads-writing-to-the-same-csv-in-python # noqa
         if sqlite_file_path:
-            df, overflow_chunks = convert_to_df(
+            df, overflow_chunks = _convert_to_df(
                 sqlite_file_path,
                 output_coordinates,
                 variable_id,
@@ -64,7 +64,7 @@ def download_and_convert_to_pandas(
                     s3_client, f"{chunk_name}b{overflow_chunk}"
                 )
                 if overflow_chunk_file_path:
-                    overflow_df, _ = convert_to_df(
+                    overflow_df, _ = _convert_to_df(
                         overflow_chunk_file_path,
                         output_coordinates,
                         variable_id,
@@ -154,7 +154,7 @@ def create_query_from_coordinates(
     return query
 
 
-def convert_to_df(
+def _convert_to_df(
     file_path: Path,
     output_coordinates: list[OutputCoordinate],
     variable_id: str,

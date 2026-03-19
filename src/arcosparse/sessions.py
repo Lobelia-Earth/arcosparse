@@ -1,6 +1,5 @@
 import gzip
 import json
-import logging
 from pathlib import PurePosixPath
 from typing import Any, Callable, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
@@ -11,9 +10,8 @@ import botocore.config
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
+from arcosparse.logger import logger
 from arcosparse.models import UserConfiguration
-
-logger = logging.getLogger("copernicusmarine")
 
 
 class ConfiguredBoto3Session:
@@ -163,7 +161,7 @@ class ConfiguredBoto3Session:
     def _create_custom_query_function(
         self,
         extra_params: dict[str, str],
-        extra_headers: dict[str, str] | None = None,
+        extra_headers: Optional[dict[str, str]] = None,
     ) -> Callable:
         def _add_custom_query_param(params, context, **kwargs):
             params["url"] = self._construct_url_with_query_params(
