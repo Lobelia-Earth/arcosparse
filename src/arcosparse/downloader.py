@@ -30,7 +30,6 @@ def download_and_convert_to_pandas(
     else:
         url_to_folder = f"{base_url}/{variable_id}"
     logger.debug(f"downloading {url_to_folder}/{chunk_name}.sqlite")
-    # TODO: check if we'd better use boto3 instead of requests
     with ConfiguredBoto3Session(
         url=url_to_folder, user_configuration=user_configuration
     ) as s3_client:
@@ -193,5 +192,10 @@ def _download_chunk_to_temp_file(
         suffix=".sqlite", delete=False
     ) as temp_file:
         tmp_path = temp_file.name
-    tmp_path = client.download_file(f"{chunk_name}.sqlite", tmp_path)
-    return Path(tmp_path) if tmp_path else None
+    success_download_file = client.download_file(
+        f"{chunk_name}.sqlite", tmp_path
+    )
+    if not success_download_file:
+        Path(tmp_path).unlink(missing_ok=True)
+        return None
+    return Path(tmp_path)

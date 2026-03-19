@@ -1,15 +1,13 @@
 import gzip
 import json
 import logging
-import re
 from pathlib import PurePosixPath
-from typing import Any, Callable, Literal, Optional
+from typing import Any, Callable, Optional
 from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
 import boto3
 import botocore
 import botocore.config
-import certifi
 from boto3.s3.transfer import TransferConfig
 from botocore.exceptions import ClientError
 
@@ -24,11 +22,8 @@ class ConfiguredBoto3Session:
         url: str,
         user_configuration: UserConfiguration,
         token_authenticated: bool = True,
-        operation_type: list[
-            Literal["ListObjectsV2", "HeadObject", "GetObject"]
-        ] = ["ListObjectsV2", "HeadObject", "GetObject"],
     ):
-        self.enpoint_url, self.bucket_name, self.prefix = (
+        self.endpoint_url, self.bucket_name, self.prefix = (
             self._parse_access_dataset_url(url)
         )
         if user_configuration.auth_token and user_configuration.s3_credentials:
@@ -37,10 +32,9 @@ class ConfiguredBoto3Session:
                 "s3_credentials for authentication"
             )
         self.s3_client = self._get_configured_boto3_session(
-            self.enpoint_url,
+            self.endpoint_url,
             user_configuration,
             token_authenticated,
-            operation_type,
         )
         self.use_threads = user_configuration.use_threads
 
@@ -106,23 +100,22 @@ class ConfiguredBoto3Session:
         endpoint_url: str,
         user_configuration: UserConfiguration,
         token_authenticated: bool,
-        operation_type: list[
-            Literal["ListObjectsV2", "HeadObject", "GetObject"]
-        ],
     ) -> Any:
         extra_config = {}
         if not user_configuration.trust_env:
             extra_config["proxies"] = {"http": "", "https": ""}
-        verify = None
+        if not user_configuration.s3_credentials:
+            extra_config["signature_version"] = botocore.UNSIGNED
+
+        extra_client_arguments = {}
         if user_configuration.disable_ssl:
-            verify = False
+            extra_client_arguments["verify"] = False
         elif user_configuration.ssl_certificate_path:
-            verify = user_configuration.ssl_certificate_path
-        else:
-            verify = certifi.where()
+            extra_client_arguments["verify"] = (
+                user_configuration.ssl_certificate_path
+            )
 
         config_boto3 = botocore.config.Config(
-            signature_version=botocore.UNSIGNED,
             retries={
                 "max_attempts": user_configuration.https_retries,
                 "mode": "adaptive",
@@ -149,22 +142,21 @@ class ConfiguredBoto3Session:
                 if user_configuration.s3_credentials
                 else None
             ),
-            verify=verify,
+            **extra_client_arguments,
         )
         extra_headers = None
         if user_configuration.auth_token and token_authenticated:
             extra_headers = {
                 "Authorization": f"Bearer {user_configuration.auth_token}"
             }
-        for operation in operation_type:
-            # Register the botocore event handler for adding custom params
-            s3_client.meta.events.register(
-                f"before-call.s3.{operation}",
-                self._create_custom_query_function(
-                    user_configuration.extra_params,
-                    extra_headers,
-                ),
-            )
+        # Register the botocore event handler for adding custom params
+        s3_client.meta.events.register(
+            "before-call.s3.*",
+            self._create_custom_query_function(
+                user_configuration.extra_params,
+                extra_headers,
+            ),
+        )
 
         return s3_client
 
@@ -184,7 +176,7 @@ class ConfiguredBoto3Session:
 
     def _construct_url_with_query_params(
         self, url: str, query_params: dict[str, str]
-    ) -> str | None:
+    ) -> str:
         parsed = urlparse(url)
 
         existing_params = parse_qs(parsed.query, keep_blank_values=True)
@@ -198,15 +190,19 @@ class ConfiguredBoto3Session:
     def _parse_access_dataset_url(
         self, data_path: str
     ) -> tuple[str, str, str]:
-        match = re.search(
-            r"^(http|https):\/\/([\w\-\.]+)(:[\d]+)?(\/.*)", data_path
-        )
-        if match:
-            endpoint_url = match.group(1) + "://" + match.group(2)
-            full_path = match.group(4)
-            segments = full_path.split("/")
-            bucket = segments[1]
-            path = "/".join(segments[2:])
-            return endpoint_url, bucket, path
-        else:
+        parsed = urlparse(data_path)
+        if (
+            parsed.scheme not in ("http", "https")
+            or not parsed.netloc
+            or not parsed.path
+        ):
             raise ValueError(f"Invalid data path: {data_path}")
+        endpoint_url = f"{parsed.scheme}://{parsed.netloc}"
+        # Path is expected to be of the form /bucket/optional/extra/path
+        path_without_leading_slash = parsed.path.lstrip("/")
+        segments = path_without_leading_slash.split("/", 1)
+        if not segments[0]:
+            raise ValueError(f"Invalid data path: {data_path}")
+        bucket = segments[0]
+        path = segments[1] if len(segments) > 1 else ""
+        return endpoint_url, bucket, path

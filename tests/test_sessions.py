@@ -1,14 +1,17 @@
 import gzip
 import io
 import json
+import os
 from unittest.mock import MagicMock, patch
 
-import certifi
 import pytest
 from botocore.exceptions import ClientError
+from dotenv import load_dotenv
 
 from arcosparse.models import S3Credentials, UserConfiguration
 from arcosparse.sessions import ConfiguredBoto3Session
+
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".test.env"))
 
 # Example URLs from test_get_entities.py
 URL_COPERNICUS = (
@@ -49,7 +52,7 @@ def _make_session(
 class TestParseAccessDatasetUrl:
     def test_copernicus_url(self):
         session, _, _ = _make_session(url=URL_COPERNICUS)
-        assert session.enpoint_url == "https://stac.marine.copernicus.eu"
+        assert session.endpoint_url == "https://stac.marine.copernicus.eu"
         assert session.bucket_name == "metadata"
         assert session.prefix == (
             "INSITU_ARC_PHYBGCWAV_DISCRETE_MYNRT_013_031/"
@@ -60,7 +63,8 @@ class TestParseAccessDatasetUrl:
     def test_ecmwf_url(self):
         session, _, _ = _make_session(url=URL_ECMWF)
         assert (
-            session.enpoint_url == "https://object-store.os-api.cci2.ecmwf.int"
+            session.endpoint_url
+            == "https://object-store.os-api.cci2.ecmwf.int"
         )
         assert session.bucket_name == "cadl-metadata"
         assert session.prefix == (
@@ -71,14 +75,14 @@ class TestParseAccessDatasetUrl:
     def test_url_with_port(self):
         url = "https://my-host.example.com:9443/bucket/path/to/object.json"
         session, _, _ = _make_session(url=url)
-        assert session.enpoint_url == "https://my-host.example.com"
+        assert session.endpoint_url == "https://my-host.example.com:9443"
         assert session.bucket_name == "bucket"
         assert session.prefix == "path/to/object.json"
 
     def test_http_url(self):
         url = "http://localhost/mybucket/foo/bar"
         session, _, _ = _make_session(url=url)
-        assert session.enpoint_url == "http://localhost"
+        assert session.endpoint_url == "http://localhost"
         assert session.bucket_name == "mybucket"
         assert session.prefix == "foo/bar"
 
@@ -156,7 +160,6 @@ class TestNetworkConfiguration:
             client_call = mock_boto3.return_value.client
             client_call.assert_called_once()
             kwargs = client_call.call_args
-            assert kwargs.kwargs["verify"] == certifi.where()
             assert kwargs.kwargs["endpoint_url"] == (
                 "https://stac.marine.copernicus.eu"
             )
@@ -414,3 +417,24 @@ class TestGetObject:
         }
         with pytest.raises(ValueError, match="403"):
             session.get_object("secret.json")
+
+
+def test_get_file_from_s3_credentials(tmp_path):
+    url = "https://object-store.os-api.cci2.ecmwf.int/cadl-arco-time-001-dta/test.txt"
+
+    with ConfiguredBoto3Session(
+        url=url, user_configuration=UserConfiguration()
+    ) as s3_client:
+        s3_client.download_file("", f"{tmp_path}/test.txt")
+    assert not os.path.exists(f"{tmp_path}/test.txt")
+
+    creds = S3Credentials(
+        access_key=os.getenv("TESTS_S3_ACCESS_KEY", ""),
+        secret_key=os.getenv("TESTS_S3_SECRET_KEY", ""),
+    )
+    user_config = UserConfiguration(s3_credentials=creds)
+    with ConfiguredBoto3Session(
+        url=url, user_configuration=user_config
+    ) as s3_client:
+        s3_client.download_file("", f"{tmp_path}/test.txt")
+    assert os.path.exists(f"{tmp_path}/test.txt")

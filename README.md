@@ -73,9 +73,9 @@ To do so, use the `user_configuration` argument, which accepts an `arcosparse.Us
 
 - `auth_token`: The token used to authenticate requests. It is passed as the `Authorization: Bearer {auth_token}` header.
 - `s3_credentials`: A custom class that contains the credentials to authenticate to S3. It is passed to `boto3` when creating the session. The `S3Credentials` contains:
-  - `aws_access_key_id`: The AWS access key ID.
-  - `aws_secret_access_key`: The AWS secret access key.
-  - `aws_session_token`: The AWS session token (optional).
+  - `access_key`: The access key ID.
+  - `secret_key`: The secret access key.
+  - `session_token`: The session token (optional).
 
 Example:
 
