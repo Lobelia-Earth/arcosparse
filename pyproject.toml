@@ -10,11 +10,12 @@ license = "EUPL-1.2"
 
 [tool.poetry.dependencies]
 python = ">=3.9"
-requests = "^2.27.1"
 pandas = ">=2"
 pystac = "^1.8.3"
 pyarrow = ">=17.0.0"
 tqdm = "^4.65"
+boto3 = ">=1.26"
+certifi = ">=2017.4.17"
 
 
 [tool.poetry.group.dev.dependencies]

@@ -1,80 +1,206 @@
-import logging
+import gzip
+import json
+from pathlib import PurePosixPath
+from typing import Any, Callable, Optional
+from urllib.parse import parse_qs, urlencode, urlparse, urlunparse
 
-import certifi
-import requests
-import requests.auth
-from requests.adapters import HTTPAdapter, Retry
+import boto3
+import botocore
+import botocore.config
+from boto3.s3.transfer import TransferConfig
+from botocore.exceptions import ClientError
 
-from arcosparse.environment_variables import PROXY_HTTP, PROXY_HTTPS
+from arcosparse.logger import logger
 from arcosparse.models import UserConfiguration
 
-logger = logging.getLogger("copernicusmarine")
 
-PROXIES = {}
-if PROXY_HTTP:
-    PROXIES["http"] = PROXY_HTTP
-if PROXY_HTTPS:
-    PROXIES["https"] = PROXY_HTTPS
-
-
-# TODO: add tests
-# example: with https://httpbin.org/delay/10 or
-# https://medium.com/@mpuig/testing-robust-requests-with-python-a06537d97771
-class ConfiguredRequestsSession(requests.Session):
+class ConfiguredBoto3Session:
     def __init__(
         self,
+        url: str,
         user_configuration: UserConfiguration,
-        *args,
-        **kwargs,
+        token_authenticated: bool = True,
     ):
-        super().__init__(*args, **kwargs)
-        self.trust_env = user_configuration.trust_env
+        self.endpoint_url, self.bucket_name, self.prefix = (
+            self._parse_access_dataset_url(url)
+        )
+        if user_configuration.auth_token and user_configuration.s3_credentials:
+            raise ValueError(
+                "Cannot use both auth_token and "
+                "s3_credentials for authentication"
+            )
+        self.s3_client = self._get_configured_boto3_session(
+            self.endpoint_url,
+            user_configuration,
+            token_authenticated,
+        )
+        self.use_threads = user_configuration.use_threads
+
+    def close(self):
+        self.s3_client.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
+    def download_file(self, object_key: str, file_path: str) -> Optional[str]:
+        """
+        If the file is not found, returns None,
+        else returns the path to the file.
+        """
+        try:
+            self.s3_client.download_file(
+                self.bucket_name,
+                str(PurePosixPath(self.prefix) / object_key),
+                file_path,
+                Config=TransferConfig(use_threads=self.use_threads),
+            )
+        except ClientError as e:
+            error_code = e.response.get("Error", {}).get("Code", "Unknown")
+            if error_code in ["403", "404"]:
+                logger.debug(
+                    f"File {object_key} not found in bucket {self.bucket_name}"
+                )
+                return None
+            logger.error(f"Error downloading file {object_key}: {e}")
+            raise
+        return file_path
+
+    def get_object(self, object_key: str) -> dict:
+        full_object_key = self.prefix
+        if object_key:
+            full_object_key = str(PurePosixPath(self.prefix) / object_key)
+        response = self.s3_client.get_object(
+            Bucket=self.bucket_name, Key=full_object_key
+        )
+        self._raise_for_status(response)
+        return self._response_to_json(response)
+
+    def _raise_for_status(self, response: Any) -> None:
+        status_code = response.get("ResponseMetadata", {}).get(
+            "HTTPStatusCode"
+        )
+        if status_code is None:
+            raise ValueError("Invalid response object: missing HTTPStatusCode")
+        if not (200 <= status_code < 300):
+            raise ValueError(f"HTTP error {status_code} for S3 operation")
+
+    def _response_to_json(self, response: Any) -> dict:
+        result = response["Body"].read()
+        if response.get("ContentEncoding") == "gzip":
+            result = gzip.decompress(result)
+        return json.loads(result)
+
+    def _get_configured_boto3_session(
+        self,
+        endpoint_url: str,
+        user_configuration: UserConfiguration,
+        token_authenticated: bool,
+    ) -> Any:
+        extra_config = {}
+        if not user_configuration.trust_env:
+            extra_config["proxies"] = {"http": "", "https": ""}
+        if not user_configuration.s3_credentials:
+            extra_config["signature_version"] = botocore.UNSIGNED
+
+        extra_client_arguments = {}
         if user_configuration.disable_ssl:
-            self.verify = False
-        else:
-            self.verify = (
-                user_configuration.ssl_certificate_path or certifi.where()
+            extra_client_arguments["verify"] = False
+        elif user_configuration.ssl_certificate_path:
+            extra_client_arguments["verify"] = (
+                user_configuration.ssl_certificate_path
             )
-        self.proxies = PROXIES
-        if user_configuration.https_retries:
-            self.mount(
-                "https://",
-                HTTPAdapter(
-                    max_retries=Retry(
-                        total=user_configuration.https_retries,
-                        backoff_factor=1,
-                        status_forcelist=[408, 429, 500, 502, 503, 504],
-                    )
-                ),
-            )
-        self.params = user_configuration.extra_params
-        self.https_timeout = user_configuration.https_timeout
-        self.bearer = (
-            BearerAuth(user_configuration.auth_token)
-            if user_configuration.auth_token
-            else None
+
+        config_boto3 = botocore.config.Config(
+            retries={
+                "max_attempts": user_configuration.https_retries,
+                "mode": "adaptive",
+            },
+            **extra_config,
+        )
+        s3_session = boto3.Session()
+        s3_client = s3_session.client(
+            "s3",
+            config=config_boto3,
+            endpoint_url=endpoint_url,
+            aws_access_key_id=(
+                user_configuration.s3_credentials.access_key
+                if user_configuration.s3_credentials
+                else None
+            ),
+            aws_secret_access_key=(
+                user_configuration.s3_credentials.secret_key
+                if user_configuration.s3_credentials
+                else None
+            ),
+            aws_session_token=(
+                user_configuration.s3_credentials.session_token
+                if user_configuration.s3_credentials
+                else None
+            ),
+            **extra_client_arguments,
+        )
+        extra_headers = None
+        if user_configuration.auth_token and token_authenticated:
+            extra_headers = {
+                "Authorization": f"Bearer {user_configuration.auth_token}"
+            }
+        # Register the botocore event handler for adding custom params
+        s3_client.meta.events.register(
+            "before-call.s3.*",
+            self._create_custom_query_function(
+                user_configuration.extra_params,
+                extra_headers,
+            ),
         )
 
-    def get(self, *args, authenticated=True, **kwargs):
-        kwargs.setdefault("timeout", self.https_timeout)
-        if self.bearer and authenticated:
-            kwargs.setdefault("auth", self.bearer)
-        return super().get(*args, **kwargs)
+        return s3_client
 
+    def _create_custom_query_function(
+        self,
+        extra_params: dict[str, str],
+        extra_headers: Optional[dict[str, str]] = None,
+    ) -> Callable:
+        def _add_custom_query_param(params, context, **kwargs):
+            params["url"] = self._construct_url_with_query_params(
+                params["url"], extra_params
+            )
+            if extra_headers:
+                params["headers"].update(extra_headers)
 
-class BearerAuth(requests.auth.AuthBase):
-    """
-    Allow to pass the bearer as "auth" argument to the requests.get method and not as a header.
+        return _add_custom_query_param
 
-    Hence the headers are not overwritten by the netrc file as stated here:
-    https://requests.readthedocs.io/en/latest/user/authentication/#netrc-authentication
+    def _construct_url_with_query_params(
+        self, url: str, query_params: dict[str, str]
+    ) -> str:
+        parsed = urlparse(url)
 
-    from https://stackoverflow.com/questions/29931671/making-an-api-call-in-python-with-an-api-that-requires-a-bearer-token
-    """  # noqa
+        existing_params = parse_qs(parsed.query, keep_blank_values=True)
+        flat_existing = {k: v[0] for k, v in existing_params.items()}
+        merged_params = {**flat_existing, **query_params}
 
-    def __init__(self, token: str):
-        self.token = token
+        new_query = urlencode(merged_params)
+        new_parsed = parsed._replace(query=new_query)
+        return urlunparse(new_parsed)
 
-    def __call__(self, r):
-        r.headers["Authorization"] = "Bearer " + self.token
-        return r
+    def _parse_access_dataset_url(
+        self, data_path: str
+    ) -> tuple[str, str, str]:
+        parsed = urlparse(data_path)
+        if (
+            parsed.scheme not in ("http", "https")
+            or not parsed.netloc
+            or not parsed.path
+        ):
+            raise ValueError(f"Invalid data path: {data_path}")
+        endpoint_url = f"{parsed.scheme}://{parsed.netloc}"
+        # Path is expected to be of the form /bucket/optional/extra/path
+        path_without_leading_slash = parsed.path.lstrip("/")
+        segments = path_without_leading_slash.split("/", 1)
+        if not segments[0]:
+            raise ValueError(f"Invalid data path: {data_path}")
+        bucket = segments[0]
+        path = segments[1] if len(segments) > 1 else ""
+        return endpoint_url, bucket, path

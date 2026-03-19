@@ -21,4 +21,6 @@ jobs:
     - name: Run tests
       env:
         ARCOSPARSE_ECMWF_TOKEN: ${{ secrets.ARCOSPARSE_ECMWF_TOKEN }}
+        TESTS_S3_ACCESS_KEY: ${{ secrets.TESTS_S3_ACCESS_KEY }}
+        TESTS_S3_SECRET_KEY: ${{ secrets.TESTS_S3_SECRET_KEY }}
       run: make test

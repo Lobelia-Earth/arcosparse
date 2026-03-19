@@ -72,6 +72,10 @@ You may need to authenticate to access some datasets, particularly when working 
 To do so, use the `user_configuration` argument, which accepts an `arcosparse.UserConfiguration` instance containing the following fields:
 
 - `auth_token`: The token used to authenticate requests. It is passed as the `Authorization: Bearer {auth_token}` header.
+- `s3_credentials`: A custom class that contains the credentials to authenticate to S3. It is passed to `boto3` when creating the session. The `S3Credentials` contains:
+  - `access_key`: The access key ID.
+  - `secret_key`: The secret access key.
+  - `session_token`: The session token (optional).
 
 Example:
 
@@ -99,6 +103,16 @@ df = arcosparse.subset_and_return_dataframe(
 Note that STAC catalogues are typically public, so `arcosparse` will request the catalogue without authentication. However, any asset links found within the catalogue will be authenticated using the token provided in `auth_token`, if one is supplied.
 
 ## Changelog
+
+### 0.6.0
+
+#### 0.6.0: Breaking Changes
+
+- Changed the `UserConfiguration` class. `https_timeout` has been deleted.
+
+#### 0.6.0: New features
+
+- All calls are now going through `boto3` instead of `requests`. It allows to handle authentication with custom S3 credentials.
 
 ### 0.5.1
 

@@ -21,7 +21,7 @@ from arcosparse.models import (
     UserConfiguration,
     UserRequest,
 )
-from arcosparse.sessions import ConfiguredRequestsSession
+from arcosparse.sessions import ConfiguredBoto3Session
 from arcosparse.utils import run_concurrently
 
 DEFAULT_COLUMNS_RENAME = {
@@ -482,21 +482,24 @@ def _get_metadata(
     user_configuration: UserConfiguration,
     platform_ids_subset: bool,
 ) -> tuple[pystac.Item, Optional[dict]]:
-    with ConfiguredRequestsSession(
-        user_configuration=user_configuration
-    ) as session:
-        result = session.get(url_metadata, authenticated=False)
-        result.raise_for_status()
-        metadata_item = pystac.Item.from_dict(result.json())
+    with ConfiguredBoto3Session(
+        url=url_metadata,
+        user_configuration=user_configuration,
+        token_authenticated=False,
+    ) as unauthenticated_s3_client:
+        item_metadata = unauthenticated_s3_client.get_object("")
+        metadata_item = pystac.Item.from_dict(item_metadata)
         platforms_metadata = None
         if platform_ids_subset:
             platforms_asset = metadata_item.get_assets().get("platforms")
             if platforms_asset is None:
                 return metadata_item, platforms_metadata
-            result = session.get(platforms_asset.href)
-            result.raise_for_status()
-
-        return metadata_item, result.json()
+            with ConfiguredBoto3Session(
+                url=platforms_asset.href,
+                user_configuration=user_configuration,
+            ) as s3_client:
+                platforms_metadata = s3_client.get_object("")
+        return metadata_item, platforms_metadata
 
 
 def _set_columns_rename(
