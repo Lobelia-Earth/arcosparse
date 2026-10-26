@@ -9,12 +9,17 @@ from arcosparse.chunk_selector import (
     get_full_chunks_names,
     select_best_asset_and_get_chunks,
 )
-from arcosparse.downloader import download_and_convert_to_pandas
+from arcosparse.downloader import (
+    download_and_convert_to_pandas,
+    download_partition_for_dask,
+    infer_dask_meta,
+)
 from arcosparse.logger import logger
 from arcosparse.models import (
     ASSETS_NAMES,
     Asset,
     AssetsNames,
+    ChunksRanges,
     Dataset,
     Entity,
     RequestedCoordinate,
@@ -113,9 +118,7 @@ def _subset(
                         f".parquet"
                     )
                 else:
-                    output_filename = (
-                        f"{chunks_range.variable_id}_{chunk_name}.parquet"
-                    )
+                    output_filename = f"{chunks_range.variable_id}_{chunk_name}.parquet"
                 output_filepath = output_path / output_filename
             tasks.append(
                 (
@@ -133,8 +136,8 @@ def _subset(
     results = [
         result
         for result in run_concurrently(
-            download_and_convert_to_pandas,
-            tasks,
+            func=download_and_convert_to_pandas,
+            function_arguments=tasks,
             max_concurrent_requests=user_configuration.max_concurrent_requests,
             tdqm_bar_configuration=progress_bar_configuration,
         )
@@ -375,6 +378,150 @@ def subset_and_return_dataframe(
     return df
 
 
+def subset_and_return_dask_dataframe(
+    url_metadata: str,
+    minimum_latitude: Optional[float],
+    maximum_latitude: Optional[float],
+    minimum_longitude: Optional[float],
+    maximum_longitude: Optional[float],
+    minimum_time: Optional[float],
+    maximum_time: Optional[float],
+    minimum_elevation: Optional[float],
+    maximum_elevation: Optional[float],
+    variables: list[str],
+    entities: list[str] = [],
+    vertical_axis: Literal["elevation", "depth"] = "elevation",
+    user_configuration: UserConfiguration = UserConfiguration(),
+    columns_rename: Optional[dict[str, str]] = None,
+):
+    """
+    Build a **lazy, distributed** Dask DataFrame for the requested subset.
+
+    Instead of eagerly downloading and concatenating every chunk (as
+    ``subset_and_return_dataframe`` does), this maps each matching SQLite
+    chunk to one Dask partition. Nothing is downloaded until you call
+    ``.compute()`` (to materialise a pandas DataFrame), ``.to_parquet(...)``,
+    or any other Dask action, and the work is spread across the active Dask
+    scheduler (threads, processes or a distributed cluster).
+
+    The per-chunk download/convert logic is exactly the same one used by the
+    eager path (``arcosparse.downloader.download_and_convert_to_pandas``),
+    so results are identical; only the orchestration differs.
+
+    Parameters
+    ----------
+    Same as ``subset_and_return_dataframe`` (minus the progress bar, which is
+    handled by the Dask scheduler/diagnostics).
+
+    Returns
+    -------
+    dask.dataframe.DataFrame
+        A lazy Dask DataFrame with one partition per chunk. Call
+        ``.compute()`` to get a pandas DataFrame, or ``.to_parquet(path)`` to
+        stream the result to disk without holding it all in memory.
+
+    Notes
+    -----
+    Requires the optional ``dask[dataframe]`` dependency:
+
+    ```bash
+    pip install "dask[dataframe]"
+    ```
+    """  # noqa
+    try:
+        import dask.dataframe as dd
+    except ImportError as error:
+        raise ImportError(
+            "subset_and_return_dask_dataframe requires Dask. "
+            'Install it with: pip install "dask[dataframe]"'
+        ) from error
+
+    columns_rename = _set_columns_rename(columns_rename)
+    request = UserRequest(
+        time=RequestedCoordinate(
+            minimum=minimum_time, maximum=maximum_time, coordinate_id="time"
+        ),
+        latitude=RequestedCoordinate(
+            minimum=minimum_latitude,
+            maximum=maximum_latitude,
+            coordinate_id="latitude",
+        ),
+        longitude=RequestedCoordinate(
+            minimum=minimum_longitude,
+            maximum=maximum_longitude,
+            coordinate_id="longitude",
+        ),
+        elevation=RequestedCoordinate(
+            minimum=minimum_elevation,
+            maximum=maximum_elevation,
+            coordinate_id="elevation",
+        ),
+        variables=variables,
+        platform_ids=entities,
+    )
+    has_platform_ids_requested = bool(request.platform_ids)
+    metadata, raw_platforms_metadata = _get_metadata(
+        url_metadata,
+        user_configuration,
+        has_platform_ids_requested,
+    )
+    platforms_metadata: Optional[dict[str, str]] = None
+    if has_platform_ids_requested:
+        if raw_platforms_metadata is None:
+            # TODO: custom error
+            raise ValueError(
+                "The requested dataset does not have platform information."
+            )
+        platforms_metadata = {
+            key: value["chunking"]
+            for key, value in raw_platforms_metadata["platforms"].items()
+        }
+        for platform_id in request.platform_ids:
+            if platform_id not in platforms_metadata:
+                raise ValueError(
+                    f"Platform {platform_id} is not available in the dataset."
+                )
+    chunks_to_download, asset_url = select_best_asset_and_get_chunks(
+        metadata, request, has_platform_ids_requested, platforms_metadata
+    )
+
+    # One task tuple per chunk: the positional arguments of
+    # ``download_and_convert_to_pandas``. output_path is always None here;
+    # Dask decides where/if data is written (e.g. via ddf.to_parquet(...)).
+    tasks: list[tuple] = []
+    for chunks_range in chunks_to_download:
+        logger.debug(f"Downloading chunks for {chunks_range.variable_id}")
+        for chunk_name in get_full_chunks_names(chunks_range.chunks_ranges):
+            tasks.append(
+                (
+                    asset_url,
+                    chunks_range.variable_id,
+                    chunk_name,
+                    chunks_range.platform_id,
+                    chunks_range.output_coordinates,
+                    user_configuration,
+                    None,
+                    vertical_axis,
+                    columns_rename,
+                )
+            )
+
+    if not tasks:
+        return dd.from_pandas(pd.DataFrame(), npartitions=1)
+
+    # Dask needs the schema (columns + dtypes) of each partition up front.
+    meta = infer_dask_meta(tasks)
+
+    # Each element of ``tasks`` becomes one lazy partition. The partition
+    # function is called as download_partition_for_dask(task, meta).
+    return dd.from_map(
+        download_partition_for_dask,
+        tasks,
+        args=(meta,),
+        meta=meta,
+    )
+
+
 def get_entities(
     url_metadata: str,
     user_configuration: UserConfiguration = UserConfiguration(),
@@ -409,9 +556,7 @@ def get_entities(
             The doi of the entity.
     """  # noqa
 
-    _, platforms_metadata = _get_metadata(
-        url_metadata, user_configuration, True
-    )
+    _, platforms_metadata = _get_metadata(url_metadata, user_configuration, True)
     all_entities = []
     if platforms_metadata is None or "platforms" not in platforms_metadata:
         return []
@@ -422,9 +567,7 @@ def get_entities(
             Entity(
                 entity_id=platform_id,
                 entity_type=platform_info.get("ptype"),
-                institution=institution_mapping.get(
-                    platform_info.get("inst"), None
-                ),
+                institution=institution_mapping.get(platform_info.get("inst"), None),
                 institution_edmo_code=platform_info.get("inst_edmo"),
                 doi=doi_mapping.get(platform_info.get("doi"), None),
             )
@@ -455,14 +598,11 @@ def get_dataset_metadata(
     metadata_item, _ = _get_metadata(url_metadata, user_configuration, False)
     assets = metadata_item.get_assets()
     assets_names: list[AssetsNames] = [
-        asset_name
-        for asset_name in assets.keys()
-        if asset_name in ASSETS_NAMES
+        asset_name for asset_name in assets.keys() if asset_name in ASSETS_NAMES
     ]  # type: ignore
     if not assets_names:
         raise ValueError(
-            "No assets found in the metadata. "
-            "Please check the metadata URL."
+            "No assets found in the metadata. Please check the metadata URL."
         )
     variables = list(metadata_item.properties.get("cube:variables", {}).keys())
     example_asset = Asset.from_metadata_item(
