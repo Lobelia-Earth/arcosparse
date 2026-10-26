@@ -56,8 +56,7 @@ def download_and_convert_to_pandas(
         if overflow_chunks:
             for overflow_chunk in range(1, overflow_chunks + 1):
                 logger.debug(
-                    f"downloading overflow chunk "
-                    f"{f'{chunk_name}b{overflow_chunk}'}"
+                    f"downloading overflow chunk {f'{chunk_name}b{overflow_chunk}'}"
                 )
 
                 overflow_chunk_file_path = _download_chunk_to_temp_file(
@@ -73,9 +72,7 @@ def download_and_convert_to_pandas(
                     )
                 else:
                     overflow_df = None
-                logger.debug(
-                    f"Appending overflow chunk {overflow_chunk} to df"
-                )
+                logger.debug(f"Appending overflow chunk {overflow_chunk} to df")
                 if overflow_df is not None:
                     if df is not None:
                         df = pd.concat([df, overflow_df], ignore_index=True)
@@ -183,18 +180,52 @@ def _convert_to_df(
     return df, overflow
 
 
+def download_partition_for_dask(
+    task_arguments: tuple,
+    meta: pd.DataFrame,
+) -> pd.DataFrame:
+    """
+    Download and convert a single chunk for use as a Dask partition.
+
+    This is a thin wrapper around ``download_and_convert_to_pandas`` that
+    guarantees a ``pandas.DataFrame`` is always returned (Dask partitions
+    cannot be ``None``). When a chunk is empty or missing, an empty
+    DataFrame matching the ``meta`` schema is returned instead.
+
+    ``task_arguments`` is the positional-argument tuple that would be passed
+    to ``download_and_convert_to_pandas`` (the same tuples the subsetter
+    builds for ``run_concurrently``).
+    """
+    df = download_and_convert_to_pandas(*task_arguments)
+    if df is None or df.empty:
+        return meta.iloc[:0].copy()
+    return df
+
+
+def infer_dask_meta(tasks: list[tuple]) -> pd.DataFrame:
+    """
+    Build the Dask ``meta`` (an empty DataFrame with the right columns and
+    dtypes) by eagerly downloading chunks until one returns data.
+
+    Dask needs to know the schema of each partition up front. Rather than
+    hard-coding it, we derive it from the first non-empty chunk so it stays
+    in sync with whatever the SQLite files and ``columns_rename`` produce.
+    """
+    for task_arguments in tasks:
+        df = download_and_convert_to_pandas(*task_arguments)
+        if df is not None and not df.empty:
+            return df.iloc[:0].copy()
+    return pd.DataFrame()
+
+
 def _download_chunk_to_temp_file(
     client: ConfiguredBoto3Session,
     chunk_name: str,
 ) -> Optional[Path]:
     tmp_path: Optional[str] = None
-    with tempfile.NamedTemporaryFile(
-        suffix=".sqlite", delete=False
-    ) as temp_file:
+    with tempfile.NamedTemporaryFile(suffix=".sqlite", delete=False) as temp_file:
         tmp_path = temp_file.name
-    success_download_file = client.download_file(
-        f"{chunk_name}.sqlite", tmp_path
-    )
+    success_download_file = client.download_file(f"{chunk_name}.sqlite", tmp_path)
     if not success_download_file:
         Path(tmp_path).unlink(missing_ok=True)
         return None
